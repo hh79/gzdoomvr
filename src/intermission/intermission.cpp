@@ -862,7 +862,7 @@ DIntermissionController::DIntermissionController(FIntermissionDescriptor *Desc, 
 
 bool DIntermissionController::NextPage ()
 {
-	FTextureID bg{};
+	FTextureID bg;
 	bool fill = false;
 
 	if (mIndex == (int)mDesc->mActions.Size() && mDesc->mLink == NAME_None)

@@ -754,14 +754,14 @@ void HWDrawInfo::DrawEndScene2D(sector_t * viewsector, FRenderState &state)
 	state.EnableDepthTest(false);
 	state.EnableMultisampling(false);
 
-	if (!vrmode->RenderPlayerSpritesInScene())
-	{
-		// [BB] Only draw the sprites if we didn't render a HUD model before.
-		if ( renderHUDModel == false )
-		{
-			DrawPlayerSprites(false, state);
-		}
-	}
+	// if (!vrmode->RenderPlayerSpritesInScene())
+	// {
+	// 	// [BB] Only draw the sprites if we didn't render a HUD model before.
+	// 	if ( renderHUDModel == false )
+	// 	{
+	// 		DrawPlayerSprites(false, state);
+	// 	}
+	// }
 
 	state.SetNoSoftLightLevel();
 
@@ -843,14 +843,14 @@ void HWDrawInfo::DrawScene(int drawmode)
 
 	RenderScene(RenderState);
 
-	if (drawmode == DM_MAINVIEW)
-	{
-		auto vrmode = VRMode::GetVRMode(true);
-		if (vrmode->RenderPlayerSpritesInScene())
-		{
-			DrawPlayerSprites(IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player), gl_RenderState);
-		}
-	}
+	// if (drawmode == DM_MAINVIEW)
+	// {
+	// 	auto vrmode = VRMode::GetVRMode(true);
+	// 	if (vrmode->RenderPlayerSpritesInScene())
+	// 	{
+	// 		DrawPlayerSprites(IsHUDModelForPlayerAvailable(players[consoleplayer].camera->player), gl_RenderState);
+	// 	}
+	// }
 
 	if (applySSAO && RenderState.GetPassType() == GBUFFER_PASS)
 	{

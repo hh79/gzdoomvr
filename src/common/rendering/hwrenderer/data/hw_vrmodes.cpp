@@ -38,9 +38,12 @@
 #include "hw_cvars.h"
 #include "hw_vrmodes.h"
 #include "v_video.h"
-#include "gl/stereo3d/gl_openvr.h"
 #include "version.h"
 #include "i_interface.h"
+
+#ifdef USE_OPENVR
+#include "gl/stereo3d/gl_openvr.h"
+#endif
 
 // Set up 3D-specific console variables:
 CVAR(Int, vr_mode, 10, CVAR_GLOBALCONFIG  | CVAR_ARCHIVE)
@@ -108,7 +111,6 @@ const VRMode *VRMode::GetVRMode(bool toscreen)
 	static VREyeInfo vrmi_righteye_eyes[2] = { VREyeInfo(.5f, 1.f), VREyeInfo(0.f, 0.f) };
 	static VREyeInfo vrmi_topbottom_eyes[2] = { VREyeInfo(-.5f, 1.f), VREyeInfo(.5f, 1.f) };
 	static VREyeInfo vrmi_checker_eyes[2] = { VREyeInfo(-.5f, 1.f), VREyeInfo(.5f, 1.f) };
-	static s3d::OpenVREyePose vrmi_openvr_eyes[2] = { s3d::OpenVREyePose(0, -.5f, 1.f), s3d::OpenVREyePose(1, .5f, 1.f) };
 
 	static VRMode vrmi_mono(1, 1.f, 1.f, 1.f, vrmi_mono_eyes);
 	static VRMode vrmi_stereo(2, 1.f, 1.f, 1.f, vrmi_stereo_eyes);
@@ -118,7 +120,11 @@ const VRMode *VRMode::GetVRMode(bool toscreen)
 	static VRMode vrmi_righteye(1, 1.f, 1.f, 1.f, vrmi_righteye_eyes);
 	static VRMode vrmi_topbottom(2, 1.f, .5f, 1.f, vrmi_topbottom_eyes);
 	static VRMode vrmi_checker(2, isqrt2, isqrt2, 1.f, vrmi_checker_eyes);
+
+#ifdef USE_OPENVR
+	static s3d::OpenVREyePose vrmi_openvr_eyes[2] = { s3d::OpenVREyePose(0, -.5f, 1.f), s3d::OpenVREyePose(1, .5f, 1.f) };
 	static s3d::OpenVRMode vrmi_openvr(vrmi_openvr_eyes);
+#endif
 
 	int mode = !toscreen || (sysCallbacks.DisableTextureFilter && sysCallbacks.DisableTextureFilter()) ? 0 : vr_mode;
 
@@ -154,8 +160,10 @@ const VRMode *VRMode::GetVRMode(bool toscreen)
 
 	case VR_CHECKERINTERLEAVED:
 		return &vrmi_checker;
+#ifdef USE_OPENVR
 	case VR_OPENVR:
 		return vrmi_openvr.IsInitialized() ? &vrmi_openvr : &vrmi_mono;
+#endif
 	}
 }
 

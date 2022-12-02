@@ -70,7 +70,6 @@ EXTERN_CVAR(Int, gl_pipeline_depth);
 
 void gl_LoadExtensions();
 void gl_PrintStartupLog();
-void Draw2D(F2DDrawer *drawer, FRenderState &state, bool outside2D = false);
 
 extern bool vid_hdr_active;
 

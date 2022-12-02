@@ -37,7 +37,7 @@
 #include "g_hub.h"
 #include "g_level.h"
 #include "g_game.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 #include "gstrings.h"
 #include "wi_stuff.h"
 #include "serializer.h"

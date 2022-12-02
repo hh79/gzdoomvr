@@ -1,3 +1,5 @@
+#ifdef USE_OPENVR
+
 #include <Windows.h>
 #include "d_event.h"
 #include "i_input.h"
@@ -314,3 +316,5 @@ float I_OpenVRGetYaw()
 	}
 	return 0;
 }
+
+#endif

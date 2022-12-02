@@ -3,7 +3,7 @@
 //
 // Copyright(C) 2016-2017 Christopher Bruns
 // Copyright(C) 2020 Simon Brown
-// Copyright(C) 2020 Krzysztof Marecki
+// Copyright(C) 2020-2022 Krzysztof Marecki
 // All rights reserved.
 //
 // This program is free software: you can redistribute it and/or modify

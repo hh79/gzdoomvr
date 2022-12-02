@@ -65,7 +65,7 @@ void Draw2D(F2DDrawer* drawer, FRenderState& state, int x, int y, int width, int
 
     auto vrmode = VRMode::GetVRMode(true);
 	//In vr mode viewport setting and color swaping is already done in FGLRenderer::Flush()
-	if (vrmode->mEyeCount == 1)
+	//if (vrmode->mEyeCount == 1)
 	{
         state.SetViewport(x, y, width, height);
         screen->mViewpoints->Set2D(state, drawer->GetWidth(), drawer->GetHeight());

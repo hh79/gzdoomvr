@@ -56,7 +56,7 @@
 #include "r_sky.h"
 #include "g_game.h"
 #include "sbar.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 #include "a_keys.h"
 #include "cmdlib.h"
 #include "d_net.h"

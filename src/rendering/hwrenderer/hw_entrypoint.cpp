@@ -190,10 +190,10 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 
 			screen->PostProcessScene(false, cm, flash, [&]() { di->DrawEndScene2D(mainvp.sector, RenderState); });
 
-			eye->AdjustBlend(di);
-			PalEntry modulateColor;
-			auto blend = V_CalcBlend(mainvp.sector, &modulateColor);
-			GLRenderer->DrawBlend(&blend, &modulateColor);
+			// eye->AdjustBlend(di);
+			// PalEntry modulateColor;
+			// auto blend = V_CalcBlend(mainvp.sector, &modulateColor);
+			// GLRenderer->DrawBlend(&blend, &modulateColor);
 
 			PostProcess.Unclock();
 		}
@@ -202,7 +202,8 @@ sector_t* RenderViewpoint(FRenderViewpoint& mainvp, AActor* camera, IntRect* bou
 
 		di->EndDrawInfo();
 		eye->TearDown();
-		screen->NextEye(eyeCount);
+		if (eyeCount - eye_ix > 1)
+			screen->NextEye(eyeCount);
 	}
 	vrmode->TearDown();
 	

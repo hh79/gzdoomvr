@@ -58,7 +58,7 @@
 #include "g_game.h"
 #include "c_bind.h"
 #include "cmdlib.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 #include "p_setup.h"
 #include "po_man.h"
 #include "actorptrselect.h"

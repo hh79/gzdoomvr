@@ -406,7 +406,11 @@ void FGLRenderer::PresentQuadStereo()
 void FGLRenderer::PresentStereo()
 {
 	auto vrmode = VRMode::GetVRMode(true);
-
+	const int eyeCount = vrmode->mEyeCount;
+	// Don't invalidate the bound framebuffer (..., false)
+	if (eyeCount > 1)
+		mBuffers->BlitToEyeTexture(mBuffers->CurrentEye(), false);
+			
 	switch (vr_mode)
 	{
 	default:

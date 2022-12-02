@@ -36,7 +36,7 @@
 #include "doommenu.h"
 #include "version.h"
 #include "g_game.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 #include "filesystem.h"
 #include "v_text.h"
 #include "gstrings.h"
