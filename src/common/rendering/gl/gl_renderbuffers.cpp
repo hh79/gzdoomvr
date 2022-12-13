@@ -988,6 +988,7 @@ int FGLRenderBuffers::NextEye(int eyeCount)
 	if (nextEye == mCurrentEye) return mCurrentEye;
 	BlitToEyeTexture(mCurrentEye);
 	mCurrentEye = nextEye;
+	//if(nextEye != 0)
 	BlitFromEyeTexture(mCurrentEye);
 	return mCurrentEye;
 }

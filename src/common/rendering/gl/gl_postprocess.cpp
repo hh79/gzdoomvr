@@ -93,7 +93,8 @@ void FGLRenderer::BlurScene(float gameinfobluramount)
 	for (int i = 0; i < eyeCount; ++i)
 	{
 		hw_postprocess.bloom.RenderBlur(&renderstate, sceneWidth, sceneHeight, gameinfobluramount);
-		if (eyeCount - i > 1) mBuffers->NextEye(eyeCount);
+		//if (eyeCount - i > 1) 
+		mBuffers->NextEye(eyeCount);
 	}
 }
 
@@ -121,7 +122,7 @@ void FGLRenderer::Flush()
 		if (is2D) vrmode->SetUp();
 		// Render 2D to eye textures
 		int eyeCount = vrmode->mEyeCount;
-		//mBuffers->CurrentEye() = 0; 
+		mBuffers->CurrentEye() = 0; 
 		for (int eye_ix = 0; eye_ix < eyeCount; ++eye_ix)
 		{
 			//const auto &eye = vrmode->mEyes[mBuffers->CurrentEye()];
@@ -131,9 +132,12 @@ void FGLRenderer::Flush()
 			// 	screen->Draw2D(true);
 			// }
 			// eye->AdjustHud();
-			screen->Draw2D(false);
-			if (eyeCount - eye_ix > 1)
-				mBuffers->NextEye(eyeCount);
+			//screen->Draw2D(false);
+			//if (eyeCount - eye_ix > 1) {
+				//mBuffers->NextEye(eyeCount);
+			//}
+			//mBuffers->BlitToEyeTexture(mBuffers->CurrentEye(), false);
+			
 		}
 		//mBuffers->BlitToEyeTexture(mBuffers->CurrentEye(), false);
 		twod->Clear();

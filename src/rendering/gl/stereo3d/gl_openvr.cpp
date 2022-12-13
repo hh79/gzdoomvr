@@ -1313,19 +1313,21 @@ namespace s3d
 		}
 		else if (gamestate != GS_TITLELEVEL) {
 			// TODO: Draw a more interesting background behind the 2D screen
-			const int eyeCount = mEyeCount;
-			GLRenderer->mBuffers->CurrentEye() = 0;  // always begin at zero, in case eye count changed
-			for (int eye_ix = 0; eye_ix < eyeCount; ++eye_ix)
-			{
-				const auto& eye = mEyes[GLRenderer->mBuffers->CurrentEye()];
+			//const int eyeCount = mEyeCount;
+			//GLRenderer->mBuffers->CurrentEye() = 0;  // always begin at zero, in case eye count changed
+			//for (int eye_ix = 0; eye_ix < eyeCount; ++eye_ix)
+			//{
+			//	const auto& eye = mEyes[GLRenderer->mBuffers->CurrentEye()];
 
-				GLRenderer->mBuffers->BindCurrentFB();
-				glClearColor(0.3f, 0.1f, 0.1f, 1.0f); // draw a dark red universe
-				glClear(GL_COLOR_BUFFER_BIT);
-				if (eyeCount - eye_ix > 1)
-					GLRenderer->mBuffers->NextEye(eyeCount);
-			}
-			GLRenderer->mBuffers->BlitToEyeTexture(GLRenderer->mBuffers->CurrentEye(), false);
+			//	GLRenderer->mBuffers->BindCurrentFB();
+			//	glClearColor(0.01f, 0.01f, 0.01f, 1.0f); // draw a dark red universe
+			//	glClear(GL_COLOR_BUFFER_BIT);
+			//	//if (eyeCount - eye_ix > 1) {
+			//		GLRenderer->mBuffers->NextEye(eyeCount);
+			//		
+			//	//}
+			//	//GLRenderer->mBuffers->BlitToEyeTexture(GLRenderer->mBuffers->CurrentEye(), false);
+			//}
 		}
 
 		static TrackedDevicePose_t poses[k_unMaxTrackedDeviceCount];

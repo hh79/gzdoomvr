@@ -165,7 +165,7 @@ void GLBuffer::Resize(size_t newsize)
 		// first unmap the old buffer
 		Bind();
 		glUnmapBuffer(mUseType);
-		//nomap = true;
+		nomap = true;
 
 		glGenBuffers(1, &mBufferId);
 		SetData(newsize, nullptr, BufferUsageType::Persistent);
