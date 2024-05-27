@@ -216,7 +216,7 @@ private:
 
 	// Checks if a copy of this sound is already playing.
 	bool CheckSingular(FSoundID sound_id);
-	virtual std::vector<uint8_t> ReadSound(int lumpnum) = 0;
+	virtual TArray<uint8_t> ReadSound(int lumpnum) = 0;
 
 protected:
 	virtual bool CheckSoundLimit(sfxinfo_t* sfx, const FVector3& pos, int near_limit, float limit_range, int sourcetype, const void* actor, int channel, float attenuation);
@@ -402,6 +402,12 @@ public:
 	FSoundID PickReplacement(FSoundID refid);
 	void HashSounds();
 	void AddRandomSound(FSoundID Owner, TArray<FSoundID> list);
+
+	TArray<sfxinfo_t>& GetSounds()	//We still need this for a short time...
+	{
+		return S_sfx;
+	}
+
 };
 
 
@@ -424,6 +430,11 @@ inline FSoundID S_FindSoundByResID(int ndx)
 inline FSoundID S_FindSound(const char* name)
 {
 	return soundEngine->FindSound(name);
+}
+
+inline FSoundID S_FindSound(const FString& name)
+{
+	return soundEngine->FindSound(name.GetChars());
 }
 
 int SoundEnabled();

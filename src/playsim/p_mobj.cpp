@@ -101,6 +101,8 @@
 #include "fragglescript/t_fs.h"
 #include "hwrenderer/data/hw_vrmodes.h"
 #include "shadowinlines.h"
+#include "model.h"
+#include "d_net.h"
 
 // MACROS ------------------------------------------------------------------
 
@@ -181,6 +183,23 @@ IMPLEMENT_POINTERS_START(AActor)
 	IMPLEMENT_POINTER(modelData)
 	IMPLEMENT_POINTER(boneComponentData)
 IMPLEMENT_POINTERS_END
+
+//==========================================================================
+//
+// Make sure Actors can never have their networking disabled.
+//
+//==========================================================================
+
+void AActor::EnableNetworking(const bool enable)
+{
+	if (!enable)
+	{
+		ThrowAbortException(X_OTHER, "Cannot disable networking on Actors. Consider a Thinker instead.");
+		return;
+	}
+
+	Super::EnableNetworking(true);
+}
 
 //==========================================================================
 //
@@ -377,7 +396,8 @@ void AActor::Serialize(FSerializer &arc)
 		A("lightlevel", LightLevel)
 		A("userlights", UserLights)
 		A("WorldOffset", WorldOffset)
-		("modelData", modelData);
+		("modelData", modelData)
+		A("LandingSpeed", LandingSpeed);
 
 		SerializeTerrain(arc, "floorterrain", floorterrain, &def->floorterrain);
 		SerializeArgs(arc, "args", args, def->args, special);
@@ -821,7 +841,7 @@ int P_GetRealMaxHealth(AActor *actor, int max)
 	{
 		max = actor->GetMaxHealth(true);
 		// [MH] First step in predictable generic morph effects
-		if (player->morphTics)
+		if (actor->alternative != nullptr)
 		{
 			if (player->MorphStyle & MORPH_FULLHEALTH)
 			{
@@ -843,7 +863,7 @@ int P_GetRealMaxHealth(AActor *actor, int max)
 	else
 	{
 		// Bonus health should be added on top of the item's limit.
-		if (player->morphTics == 0 || (player->MorphStyle & MORPH_ADDSTAMINA))
+		if (actor->alternative == nullptr || (player->MorphStyle & MORPH_ADDSTAMINA))
 		{
 			max += actor->IntVar(NAME_BonusHealth);
 		}
@@ -974,6 +994,44 @@ DEFINE_ACTION_FUNCTION(AActor, CheckLocalView)
 	ACTION_RETURN_BOOL(self->CheckLocalView());
 }
 
+void AActor::DisableLocalRendering(const unsigned int pNum, const bool disable)
+{
+	if (pNum == consoleplayer)
+		NoLocalRender = disable;
+}
+
+static void DisableLocalRendering(AActor* const self, const unsigned int pNum, const int disable)
+{
+	self->DisableLocalRendering(pNum, disable);
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, DisableLocalRendering, DisableLocalRendering)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_UINT(pNum);
+	PARAM_INT(disable);
+
+	DisableLocalRendering(self, pNum, disable);
+	return 0;
+}
+
+bool AActor::ShouldRenderLocally() const
+{
+	return !NoLocalRender;
+}
+
+static int ShouldRenderLocally(const AActor* const self)
+{
+	return self->ShouldRenderLocally();
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, ShouldRenderLocally, ShouldRenderLocally)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+
+	ACTION_RETURN_INT(ShouldRenderLocally(self));
+}
+
 //============================================================================
 //
 // AActor :: IsInsideVisibleAngles
@@ -1053,6 +1111,9 @@ bool AActor::IsVisibleToPlayer() const
 	// [BB] Safety check. This should never be NULL. Nevertheless, we return true to leave the default ZDoom behavior unaltered.
 	if (p == nullptr || p->camera == nullptr )
 		return true;
+
+	if (!ShouldRenderLocally())
+		return false;
  
 	if (VisibleToTeam != 0 && teamplay &&
 		(signed)(VisibleToTeam-1) != p->userinfo.GetTeam() )
@@ -1331,11 +1392,66 @@ bool AActor::Massacre ()
 //
 //----------------------------------------------------------------------------
 
-FSerializer &Serialize(FSerializer &arc, const char *key, ModelOverride &sid, ModelOverride *def)
+void SerializeModelID(FSerializer &arc, const char *key, int &id)
+{	// TODO: make it a proper serializable type (FModelID) instead of an int
+	if(arc.isWriting())
+	{
+		if(id >= 0)
+		{
+			arc(key, Models[id]->mFilePath);
+		}
+	}
+	else
+	{
+		if(arc.HasKey(key))
+		{
+			std::pair<FString, FString> modelFile;
+			arc(key, modelFile);
+
+			id = FindModel(modelFile.first.GetChars(), modelFile.second.GetChars(), true);
+		}
+		else
+		{
+			id = -1;
+		}
+	}
+}
+
+FSerializer &Serialize(FSerializer &arc, const char *key, ModelOverride &mo, ModelOverride *def)
 {
 	arc.BeginObject(key);
-	arc("modelID", sid.modelID);
-	arc("surfaceSkinIDs", sid.surfaceSkinIDs);
+	SerializeModelID(arc, "model", mo.modelID);
+	arc("surfaceSkinIDs", mo.surfaceSkinIDs);
+	arc.EndObject();
+	return arc;
+}
+
+FSerializer &Serialize(FSerializer &arc, const char *key, AnimModelOverride &amo, AnimModelOverride *def)
+{
+	int ok = arc.BeginObject(key);
+	if(arc.isReading() && !ok)
+	{
+		amo.id = -1;
+	}
+	else if(ok)
+	{
+		SerializeModelID(arc, "model", amo.id);
+		arc.EndObject();
+	}
+	return arc;
+}
+
+FSerializer &Serialize(FSerializer &arc, const char *key, struct AnimOverride &ao, struct AnimOverride *def)
+{
+	arc.BeginObject(key);
+	arc("firstFrame", ao.firstFrame);
+	arc("lastFrame", ao.lastFrame);
+	arc("loopFrame", ao.loopFrame);
+	arc("startFrame", ao.startFrame);
+	arc("flags", ao.flags);
+	arc("framerate", ao.framerate);
+	arc("startTic", ao.startTic);
+	arc("switchTic", ao.switchTic);
 	arc.EndObject();
 	return arc;
 }
@@ -1346,10 +1462,13 @@ void DActorModelData::Serialize(FSerializer& arc)
 	arc("modelDef", modelDef)
 		("models", models)
 		("skinIDs", skinIDs)
-		//("surfaceSkinIDs", surfaceSkinIDs)
 		("animationIDs", animationIDs)
 		("modelFrameGenerators", modelFrameGenerators)
-		("hasModel", hasModel);
+		("flags", flags)
+		("overrideFlagsSet", overrideFlagsSet)
+		("overrideFlagsClear", overrideFlagsClear)
+		("curAnim", curAnim)
+		("prevAnim", prevAnim);
 }
 
 void DActorModelData::OnDestroy()
@@ -1883,7 +2002,7 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 	{
 		mo->Vel.MakeResize(VELOCITY_THRESHOLD);
 	}
-	move = mo->Vel;
+	move = mo->Vel.XY();
 	// [RH] Carrying sectors didn't work with low speeds in BOOM. This is
 	// because BOOM relied on the speed being fast enough to accumulate
 	// despite friction. If the speed is too low, then its movement will get
@@ -1969,7 +2088,7 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 	// because it also calls P_CheckSlopeWalk on its clipped steps.
 	DVector2 onestep = startmove / steps;
 
-	start = mo->Pos();
+	start = mo->Pos().XY();
 	step = 1;
 	totalsteps = steps;
 
@@ -1994,7 +2113,7 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 
 		ptry = start + move * step / steps;
 
-		DVector2 startvel = mo->Vel;
+		DVector2 startvel = mo->Vel.XY();
 
 		// killough 3/15/98: Allow objects to drop off
 		// [RH] If walking on a slope, stay on the slope
@@ -2048,7 +2167,7 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 						// If the move is done a second time (because it was too fast for one move), it
 						// is still clipped against the wall at its full speed, so you effectively
 						// execute two moves in one tic.
-							P_SlideMove (mo, mo->Vel, 1);
+							P_SlideMove (mo, mo->Vel.XY(), 1);
 						}
 						else
 						{
@@ -2062,7 +2181,7 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 						{
 							if (!player || !(mo->Level->i_compatflags & COMPATF_WALLRUN))
 							{
-								move = mo->Vel;
+								move = mo->Vel.XY();
 								onestep = move / steps;
 								P_CheckSlopeWalk (mo, move);
 							}
@@ -2079,7 +2198,7 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 					DVector2 t;
 					t.X = 0, t.Y = onestep.Y;
 					walkplane = P_CheckSlopeWalk (mo, t);
-					if (P_TryMove (mo, mo->Pos() + t, true, walkplane, tm))
+					if (P_TryMove (mo, mo->Pos().XY() + t, true, walkplane, tm))
 					{
 						mo->Vel.X = 0;
 					}
@@ -2087,7 +2206,7 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 					{
 						t.X = onestep.X, t.Y = 0;
 						walkplane = P_CheckSlopeWalk (mo, t);
-						if (P_TryMove (mo, mo->Pos() + t, true, walkplane, tm))
+						if (P_TryMove (mo, mo->Pos().XY() + t, true, walkplane, tm))
 						{
 							mo->Vel.Y = 0;
 						}
@@ -2198,7 +2317,7 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 						move = move.Rotated(anglediff);
 						oldangle = mo->Angles.Yaw;
 					}
-					start = mo->Pos() - move * step / steps;
+					start = mo->Pos().XY() - move * step / steps;
 				}
 			}
 		}
@@ -2510,11 +2629,9 @@ static void P_ZMovement (AActor *mo, double oldfloorz)
 			mo->SetZ(mo->floorz);
 			if (mo->Vel.Z < 0)
 			{
-				const double minvel = -8;	// landing speed from a jump with normal gravity
-
 				// Spawn splashes, etc.
 				P_HitFloor (mo);
-				if (mo->DamageType == NAME_Ice && mo->Vel.Z < minvel)
+				if (mo->DamageType == NAME_Ice && mo->Vel.Z < mo->LandingSpeed)
 				{
 					mo->tics = 1;
 					mo->Vel.Zero();
@@ -2527,11 +2644,11 @@ static void P_ZMovement (AActor *mo, double oldfloorz)
 				}
 				if (mo->player)
 				{
-					if (mo->player->jumpTics < 0 || mo->Vel.Z < minvel)
+					if (mo->player->jumpTics < 0 || mo->Vel.Z < mo->LandingSpeed)
 					{ // delay any jumping for a short while
 						mo->player->jumpTics = 7;
 					}
-					if (mo->Vel.Z < minvel && !(mo->flags & MF_NOGRAVITY))
+					if (mo->Vel.Z < mo->LandingSpeed && !(mo->flags & MF_NOGRAVITY))
 					{
 						// Squat down.
 						// Decrease viewheight for a moment after hitting the ground (hard),
@@ -2881,7 +2998,7 @@ void P_NightmareRespawn (AActor *mobj)
 	}
 
 	// something is occupying its position?
-	if (!P_CheckPosition(mo, mo->Pos(), true))
+	if (!P_CheckPosition(mo, mo->Pos().XY(), true))
 	{
 		//[GrafZahl] MF_COUNTKILL still needs to be checked here.
 		mo->ClearCounters();
@@ -2910,7 +3027,7 @@ void P_NightmareRespawn (AActor *mobj)
 	P_SpawnTeleportFog(mobj, mobj->Pos(), true, true);
 
 	// spawn a teleport fog at the new spot
-	P_SpawnTeleportFog(mobj, DVector3(mobj->SpawnPoint, z), false, true);
+	P_SpawnTeleportFog(mobj, DVector3(mobj->SpawnPoint.XY(), z), false, true);
 
 	// remove the old monster
 	mobj->Destroy ();
@@ -3439,22 +3556,16 @@ void AActor::SetPitch(DAngle p, int fflags)
 	{
 		if (player != nullptr)
 		{
-			const bool mustLerp = !P_NoInterpolation(player, this);
-
-			if ((fflags & SPF_INTERPOLATE) || ((fflags & SPF_SCALEDNOLERP) && mustLerp))
+			if (fflags & SPF_SCALEDNOLERP)
 			{
-				Angles.Pitch = p;
-				player->cheats |= CF_INTERPVIEW;
-			}
-			else if ((fflags & SPF_SCALEDNOLERP) && !mustLerp)
-			{
-				player->angleTargets.Pitch = deltaangle(Angles.Pitch, p);
-				player->angleAppliedAmounts.Pitch = nullAngle;
+				player->angleOffsetTargets.Pitch = deltaangle(Angles.Pitch, p);
 				player->cheats |= CF_SCALEDNOLERP;
 			}
 			else
 			{
 				Angles.Pitch = p;
+				if (fflags & SPF_INTERPOLATE)
+					player->cheats |= CF_INTERPVIEW;
 			}
 		}
 		else
@@ -3471,22 +3582,16 @@ void AActor::SetAngle(DAngle ang, int fflags)
 	{
 		if (player != nullptr)
 		{
-			const bool mustLerp = !P_NoInterpolation(player, this);
-
-			if ((fflags & SPF_INTERPOLATE) || ((fflags & SPF_SCALEDNOLERP) && mustLerp))
+			if (fflags & SPF_SCALEDNOLERP)
 			{
-				Angles.Yaw = ang;
-				player->cheats |= CF_INTERPVIEW;
-			}
-			else if ((fflags & SPF_SCALEDNOLERP) && !mustLerp)
-			{
-				player->angleTargets.Yaw = deltaangle(Angles.Yaw, ang);
-				player->angleAppliedAmounts.Yaw = nullAngle;
+				player->angleOffsetTargets.Yaw = deltaangle(Angles.Yaw, ang);
 				player->cheats |= CF_SCALEDNOLERP;
 			}
 			else
 			{
 				Angles.Yaw = ang;
+				if (fflags & SPF_INTERPOLATE)
+					player->cheats |= CF_INTERPVIEW;
 			}
 		}
 		else
@@ -3503,22 +3608,16 @@ void AActor::SetRoll(DAngle r, int fflags)
 	{
 		if (player != nullptr)
 		{
-			const bool mustLerp = !P_NoInterpolation(player, this);
-
-			if ((fflags & SPF_INTERPOLATE) || ((fflags & SPF_SCALEDNOLERP) && mustLerp))
+			if (fflags & SPF_SCALEDNOLERP)
 			{
-				Angles.Roll = r;
-				player->cheats |= CF_INTERPVIEW;
-			}
-			else if ((fflags & SPF_SCALEDNOLERP) && !mustLerp)
-			{
-				player->angleTargets.Roll = deltaangle(Angles.Roll, r);
-				player->angleAppliedAmounts.Roll = nullAngle;
+				player->angleOffsetTargets.Roll = deltaangle(Angles.Roll, r);
 				player->cheats |= CF_SCALEDNOLERP;
 			}
 			else
 			{
 				Angles.Roll = r;
+				if (fflags & SPF_INTERPOLATE)
+					player->cheats |= CF_INTERPVIEW;
 			}
 		}
 		else
@@ -3711,6 +3810,22 @@ void AActor::Tick ()
 	static const uint8_t HereticScrollDirs[4] = { 6, 9, 1, 4 };
 	static const uint8_t HereticSpeedMuls[5] = { 5, 10, 25, 30, 35 };
 
+	// Check for Actor unmorphing, but only on the thing that is the morphed Actor.
+	// Players do their own special checking for this.
+	if (alternative != nullptr && !(flags & MF_UNMORPHED) && player == nullptr)
+	{
+		int res = false;
+		IFVIRTUAL(AActor, CheckUnmorph)
+		{
+			VMValue params[] = { this };
+			VMReturn ret[] = { &res };
+			VMCall(func, params, 1, ret, 1);
+		}
+
+		if (res)
+			return;
+	}
+
 	if (freezetics > 0)
 	{
 		freezetics--;
@@ -3758,7 +3873,8 @@ void AActor::Tick ()
 	}
 	else
 	{
-
+		if (player)
+			player->crossingPortal = false;
 		if (!player || !(player->cheats & CF_PREDICTING))
 		{
 			// Handle powerup effects here so that the order is controlled
@@ -4736,6 +4852,7 @@ AActor *AActor::StaticSpawn(FLevelLocals *Level, PClassActor *type, const DVecto
 	AActor *actor;
 
 	actor = static_cast<AActor *>(Level->CreateThinker(type));
+	actor->EnableNetworking(true);
 
 	ConstructActor(actor, pos, SpawningMapThing);
 	return actor;
@@ -5004,6 +5121,16 @@ void AActor::CallDeactivate(AActor *activator)
 
 void AActor::OnDestroy ()
 {
+	// If the Actor is leaving behind a premorph Actor, make sure it gets cleaned up as
+	// well so it's not stuck in the map.
+	if (alternative != nullptr && !(flags & MF_UNMORPHED))
+	{
+		alternative->ClearCounters();
+		alternative->alternative = nullptr;
+		alternative->Destroy();
+		alternative = nullptr;
+	}
+
 	// [ZZ] call destroy event hook.
 	//      note that this differs from ThingSpawned in that you can actually override OnDestroy to avoid calling the hook.
 	//      but you can't really do that without utterly breaking the game, so it's ok.
@@ -5125,59 +5252,157 @@ extern bool demonew;
 
 //==========================================================================
 //
-// This once was the main method for pointer cleanup, but
-// nowadays its only use is swapping out PlayerPawns.
-// This requires pointer fixing throughout all objects and a few
-// global variables, but it only needs to look at pointers that
-// can point to a player.
+// This function is only designed for swapping player pawns
+// over to their new ones upon changing levels or respawning. It SHOULD NOT be
+// used for anything else! Do not export this functionality as it's
+// meant strictly for internal usage.
 //
 //==========================================================================
 
-void StaticPointerSubstitution(AActor* old, AActor* notOld)
+void PlayerPointerSubstitution(AActor* oldPlayer, AActor* newPlayer, bool removeOld)
 {
-	DObject* probe;
-	size_t changed = 0;
-	int i;
-
-	if (old == nullptr) return;
-
-	// This is only allowed to replace players or swap out morphed monsters
-	if (!old->IsKindOf(NAME_PlayerPawn) || (notOld != nullptr && !notOld->IsKindOf(NAME_PlayerPawn)))
+	if (oldPlayer == nullptr || newPlayer == nullptr || oldPlayer == newPlayer
+		|| !oldPlayer->IsKindOf(NAME_PlayerPawn) || !newPlayer->IsKindOf(NAME_PlayerPawn))
 	{
-		if (notOld == nullptr) return;
-		if (!old->IsKindOf(NAME_MorphedMonster) && !notOld->IsKindOf(NAME_MorphedMonster)) return;
-	}
-	// Go through all objects.
-	i = 0; DObject* last = 0;
-	for (probe = GC::Root; probe != NULL; probe = probe->ObjNext)
-	{
-		i++;
-		changed += probe->PointerSubstitution(old, notOld);
-		last = probe;
+		return;
 	}
 
-	// Go through players.
-	for (i = 0; i < MAXPLAYERS; i++)
+	// Go through player infos.
+	for (int i = 0; i < MAXPLAYERS; ++i)
 	{
-		if (playeringame[i])
-		{
-			AActor* replacement = notOld;
-			auto& p = players[i];
+		if (!oldPlayer->Level->PlayerInGame(i))
+			continue;
 
-			if (p.mo == old)					p.mo = replacement, changed++;
-			if (p.poisoner.ForceGet() == old)			p.poisoner = replacement, changed++;
-			if (p.attacker.ForceGet() == old)			p.attacker = replacement, changed++;
-			if (p.camera.ForceGet() == old)				p.camera = replacement, changed++;
-			if (p.ConversationNPC.ForceGet() == old)	p.ConversationNPC = replacement, changed++;
-			if (p.ConversationPC.ForceGet() == old)		p.ConversationPC = replacement, changed++;
-		}
+		auto p = oldPlayer->Level->Players[i];
+
+		if (p->mo == oldPlayer)
+			p->mo = newPlayer;
+		if (p->poisoner == oldPlayer)
+			p->poisoner = newPlayer;
+		if (p->attacker == oldPlayer)
+			p->attacker = newPlayer;
+		if (p->camera == oldPlayer)
+			p->camera = newPlayer;
+		if (p->ConversationNPC == oldPlayer)
+			p->ConversationNPC = newPlayer;
+		if (p->ConversationPC == oldPlayer)
+			p->ConversationPC = newPlayer;
 	}
 
-	// Go through sectors. Only the level this actor belongs to is relevant.
-	for (auto& sec : old->Level->sectors)
+	// Go through sectors.
+	for (auto& sec : oldPlayer->Level->sectors)
 	{
-		if (sec.SoundTarget == old) sec.SoundTarget = notOld;
+		if (sec.SoundTarget == oldPlayer)
+			sec.SoundTarget = newPlayer;
 	}
+
+	// Update all the remaining object pointers.
+	for (DObject* probe = GC::Root; probe != nullptr; probe = probe->ObjNext)
+		probe->PointerSubstitution(oldPlayer, newPlayer, removeOld);
+}
+
+//==========================================================================
+//
+// This has some extra barriers compared to PlayerPointerSubstitution to allow
+// Actors to freely morph into other Actors which is its main usage.
+// It also allows morphing to be more extendable from ZScript.
+//
+//==========================================================================
+
+int MorphPointerSubstitution(AActor* from, AActor* to)
+{
+	// Special care is taken here to make sure things marked as a dummy Actor for a morphed thing aren't
+	// allowed to be changed into other things. Anything being morphed into that's considered a player
+	// is automatically out of the question to ensure modders aren't swapping clients around.
+	if (from == nullptr || to == nullptr || from == to || to->player != nullptr
+		|| (from->flags & MF_UNMORPHED)									// Another thing's dummy Actor, unmorphing the wrong way, etc.
+		|| (from->alternative == nullptr && to->alternative != nullptr)	// Morphing into something that's already morphed.
+		|| (from->alternative != nullptr && from->alternative != to))	// Only allow something morphed to unmorph.
+	{
+		return false;
+	}
+
+	const bool toIsPlayer = to->IsKindOf(NAME_PlayerPawn);
+	if (from->IsKindOf(NAME_PlayerPawn))
+	{
+		// Players are only allowed to turn into other valid player pawns. For
+		// valid pawns, make sure an actual player is changing into an empty one.
+		// Voodoo dolls aren't allowed to morph since that should be passed to
+		// the main player directly.
+		if (!toIsPlayer || from->player == nullptr || from->player->mo != from)
+			return false;
+	}
+	else if (toIsPlayer || from->player != nullptr
+			|| (from->IsKindOf(NAME_Inventory) && from->PointerVar<AActor>(NAME_Owner) != nullptr)
+			|| (to->IsKindOf(NAME_Inventory) && to->PointerVar<AActor>(NAME_Owner) != nullptr))
+	{
+		// Only allow items to be swapped around if they aren't currently owned. Also prevent non-players from
+		// turning into fake players.
+		return false;
+	}
+
+	// Since the check is good, move the inventory items over. This should always be done when
+	// morphing to emulate Heretic/Hexen's behavior since those stored the inventory in their
+	// player structs.
+	IFVM(Actor, ObtainInventory)
+	{
+		VMValue params[] = { to, from };
+		VMCall(func, params, 2, nullptr, 0);
+	}
+
+	// Go through player infos.
+	for (int i = 0; i < MAXPLAYERS; ++i)
+	{
+		if (!from->Level->PlayerInGame(i))
+			continue;
+
+		auto p = from->Level->Players[i];
+
+		if (p->mo == from)
+			p->mo = to;
+		if (p->poisoner == from)
+			p->poisoner = to;
+		if (p->attacker == from)
+			p->attacker = to;
+		if (p->camera == from)
+			p->camera = to;
+		if (p->ConversationNPC == from)
+			p->ConversationNPC = to;
+		if (p->ConversationPC == from)
+			p->ConversationPC = to;
+	}
+
+	// Go through sectors.
+	for (auto& sec : from->Level->sectors)
+	{
+		if (sec.SoundTarget == from)
+			sec.SoundTarget = to;
+	}
+
+	// Replace any object pointers that are safe to swap around.
+	for (DObject* probe = GC::Root; probe != nullptr; probe = probe->ObjNext)
+		probe->PointerSubstitution(from, to, false);
+
+	// Remaining maintenance related to morphing.
+	if (from->player != nullptr)
+	{
+		to->player = from->player;
+		from->player = nullptr;
+	}
+
+	if (from->alternative != nullptr)
+	{
+		to->flags &= ~MF_UNMORPHED;
+		to->alternative = from->alternative = nullptr;
+	}
+	else
+	{
+		from->flags |= MF_UNMORPHED;
+		from->alternative = to;
+		to->alternative = from;
+	}
+
+	return true;
 }
 
 void FLevelLocals::PlayerSpawnPickClass (int playernum)
@@ -5287,6 +5512,7 @@ AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flag
 	p->mo = mobj;
 	mobj->player = p;
 	state = p->playerstate;
+	const auto heldWeap = state == PST_REBORN && (dmflags3 & DF3_REMEMBER_LAST_WEAP) ? p->ReadyWeapon : nullptr;
 	if (state == PST_REBORN || state == PST_ENTER)
 	{
 		PlayerReborn (playernum);
@@ -5303,7 +5529,7 @@ AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flag
 	}
 
 	// [GRB] Reset skin
-	p->userinfo.SkinNumChanged(R_FindSkin (Skins[p->userinfo.GetSkin()].Name, p->CurrentPlayerClass));
+	p->userinfo.SkinNumChanged(R_FindSkin (Skins[p->userinfo.GetSkin()].Name.GetChars(), p->CurrentPlayerClass));
 
 	if (!(mobj->flags2 & MF2_DONTTRANSLATE))
 	{
@@ -5387,7 +5613,7 @@ AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flag
 	{ // Special inventory handling for respawning in coop
 		IFVM(PlayerPawn, FilterCoopRespawnInventory)
 		{
-			VMValue params[] = { p->mo, oldactor };
+			VMValue params[] = { p->mo, oldactor, ((heldWeap == nullptr || (heldWeap->ObjectFlags & OF_EuthanizeMe)) ? nullptr : heldWeap) };
 			VMCall(func, params, 2, nullptr, 0);
 		}
 	}
@@ -5450,7 +5676,7 @@ AActor *FLevelLocals::SpawnPlayer (FPlayerStart *mthing, int playernum, int flag
 				if (sec.SoundTarget == oldactor) sec.SoundTarget = nullptr;
 			}
 
-			StaticPointerSubstitution (oldactor, p->mo);
+			PlayerPointerSubstitution (oldactor, p->mo, false);
 
 			localEventManager->PlayerRespawned(PlayerNum(p));
 			Behaviors.StartTypedScripts (SCRIPT_Respawn, p->mo, true);
@@ -5685,15 +5911,26 @@ AActor *FLevelLocals::SpawnMapThing (FMapThing *mthing, int position)
 
 	const AActor *info = GetDefaultByType (i);
 
-	// don't spawn keycards and players in deathmatch
-	if (deathmatch && info->flags & MF_NOTDMATCH)
-		return NULL;
+	// Don't spawn keycards and players in deathmatch.
+	if (deathmatch && (info->flags & MF_NOTDMATCH))
+		return nullptr;
 
-	// don't spawn extra things in coop if so desired
-	if (multiplayer && !deathmatch && (dmflags2 & DF2_NO_COOP_THING_SPAWN))
+	// Don't spawn extra things in co-op if desired.
+	if (multiplayer && !deathmatch)
 	{
-		if ((mthing->flags & (MTF_DEATHMATCH|MTF_SINGLE)) == MTF_DEATHMATCH)
-			return NULL;
+		// Don't spawn DM-only things in co-op.
+		if ((dmflags2 & DF2_NO_COOP_THING_SPAWN) && (mthing->flags & (MTF_DEATHMATCH|MTF_SINGLE)) == MTF_DEATHMATCH)
+			return nullptr;
+		// Having co-op only functionality is a bit odd, but you never know.
+		if (!mthing->special && !mthing->thingid && (mthing->flags & (MTF_COOPERATIVE | MTF_SINGLE)) == MTF_COOPERATIVE)
+		{
+			// Don't spawn co-op only things in general.
+			if (dmflags3 & DF3_NO_COOP_ONLY_THINGS)
+				return nullptr;
+			// Don't spawn co-op only items.
+			if ((dmflags3 & DF3_NO_COOP_ONLY_ITEMS) && i->IsDescendantOf(NAME_Inventory))
+				return nullptr;
+		}
 	}
 
 	// [RH] don't spawn extra weapons in coop if so desired
@@ -5732,7 +5969,7 @@ AActor *FLevelLocals::SpawnMapThing (FMapThing *mthing, int position)
 	else
 		sz = ONFLOORZ;
 
-	mobj = AActor::StaticSpawn (this, i, DVector3(mthing->pos, sz), NO_REPLACE, true);
+	mobj = AActor::StaticSpawn (this, i, DVector3(mthing->pos.XY(), sz), NO_REPLACE, true);
 
 	if (sz == ONFLOORZ)
 	{
@@ -6542,7 +6779,7 @@ bool P_CheckMissileSpawn (AActor* th, double maxdist)
 	// killough 3/15/98: no dropoff (really = don't care for missiles)
 	auto oldf2 = th->flags2;
 	th->flags2 &= ~(MF2_MCROSS|MF2_PCROSS);	// The following check is not supposed to activate missile triggers.
-	if (!(P_TryMove (th, newpos, false, NULL, tm, true)))
+	if (!(P_TryMove (th, newpos.XY(), false, NULL, tm, true)))
 	{
 		// [RH] Don't explode ripping missiles that spawn inside something
 		if (th->BlockingMobj == NULL || !(th->flags2 & MF2_RIP) || (th->BlockingMobj->flags5 & MF5_DONTRIP))
@@ -7578,8 +7815,8 @@ void AActor::SetTranslation(FName trname)
 		return;
 	}
 
-	int tnum = R_FindCustomTranslation(trname);
-	if (tnum >= 0)
+	auto tnum = R_FindCustomTranslation(trname);
+	if (tnum != INVALID_TRANSLATION)
 	{
 		Translation = tnum;
 	}
@@ -7596,7 +7833,7 @@ static FRandom pr_restore("RestorePos");
 void AActor::RestoreSpecialPosition()
 {
 	// Move item back to its original location
-	DVector2 sp = SpawnPoint;
+	DVector2 sp = SpawnPoint.XY();
 
 	FLinkContext ctx;
 	UnlinkFromWorld(&ctx);

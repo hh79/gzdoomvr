@@ -749,9 +749,8 @@ sfxinfo_t *SoundEngine::LoadSound(sfxinfo_t *sfx)
 		{
 			auto sfxp = sfxdata.data();
 			int32_t dmxlen = LittleLong(((int32_t *)sfxp)[1]);
-
 			// If the sound is voc, use the custom loader.
-			if (memcmp (sfxp, "Creative Voice File", 19) == 0)
+			if (size > 19 && memcmp (sfxp, "Creative Voice File", 19) == 0)
 			{
 				sfx->data = GSnd->LoadSoundVoc(sfxp, size);
 			}
@@ -1826,7 +1825,8 @@ void S_SetSoundPaused(int state)
 
 	if ((state || i_soundinbackground) && !pauseext)
 	{
-		S_ResumeSound(true);
+		if (!paused)
+			S_ResumeSound(true);
 		if (GSnd != nullptr)
 		{
 			GSnd->SetInactive(SoundRenderer::INACTIVE_Active);
@@ -1856,12 +1856,18 @@ CCMD(snd_listdrivers)
 	GSnd->PrintDriversList();
 }
 
+//==========================================================================
+//
+// CCMD listsounds
+//
+//==========================================================================
+
 CCMD(listsounds)
 {
 	for (unsigned i = 1; i < soundEngine->GetNumSounds(); i++)
 	{
-		auto S_sfx = soundEngine->GetSfx(FSoundID::fromInt(i));
-		Printf("%04d: %s\n", i, S_sfx->name.GetChars());
+		auto sfx = soundEngine->GetSfx(FSoundID::fromInt(i));
+		Printf("%4d: name = %s, resId = %d, lumpnum = %d\n", i, sfx->name.GetChars(), sfx->ResourceId, sfx->lumpnum);
 	}
 }
 

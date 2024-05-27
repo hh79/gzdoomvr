@@ -36,6 +36,21 @@
 #include <string.h>
 #include <vector>
 
+#ifndef _WIN32
+
+#include <limits.h>
+#include <stdlib.h>
+#ifdef __FreeBSD__
+#include <sys/time.h>
+#endif
+#include <unistd.h>
+#include <fnmatch.h>
+#include <sys/stat.h>
+
+#include <dirent.h>
+
+#endif
+
 namespace FileSys {
 	
 enum
@@ -62,14 +77,6 @@ enum
 
 
 #ifndef _WIN32
-
-#include <limits.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <fnmatch.h>
-#include <sys/stat.h>
-
-#include <dirent.h>
 
 struct findstate_t
 {

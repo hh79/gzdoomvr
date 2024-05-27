@@ -262,7 +262,7 @@ class Weapon : StateProvider
 		}
 		let psp = player.GetPSprite(PSP_WEAPON);
 		if (!psp) return;
-		if (player.morphTics || player.cheats & CF_INSTANTWEAPSWITCH)
+		if (Alternative || player.cheats & CF_INSTANTWEAPSWITCH)
 		{
 			psp.y = WEAPONBOTTOM;
 		}
@@ -964,14 +964,14 @@ class Weapon : StateProvider
 		count1 = (Ammo1 != null) ? Ammo1.Amount : 0;
 		count2 = (Ammo2 != null) ? Ammo2.Amount : 0;
 
-		if (ammocount >= 0)
+		if (bDehAmmo && Ammo1 == null)
+		{
+			lAmmoUse1 = 0;
+		}
+		else if (ammocount >= 0)
 		{
 			lAmmoUse1 = ammocount;
 			lAmmoUse2 = ammocount;
-		}
-		else if (bDehAmmo && Ammo1 == null)
-		{
-			lAmmoUse1 = 0;
 		}
 		else
 		{

@@ -186,7 +186,7 @@ bool IsOpenVRPresent()
 	if (!done)
 	{
 		done = true;
-		cached_result = OpenVRModule.Load({ NicePath("$PROGDIR/" OPENVRLIB), OPENVRLIB });
+		cached_result = OpenVRModule.Load({ NicePath("$PROGDIR/" OPENVRLIB).GetChars(), OPENVRLIB});
 	}
 	return cached_result;
 #endif
@@ -290,8 +290,7 @@ namespace s3d
 			return 0;
 		}
 
-		virtual void RenderFrame(FModelRenderer* renderer, FGameTexture* skin, int frame, int frame2, double inter, int translation, const FTextureID* surfaceskinids, const TArray<VSMatrix>& boneData, int boneStartPosition) override
-		{
+		virtual void RenderFrame(FModelRenderer* renderer, FGameTexture* skin, int frame, int frame2, double inter, FTranslationID translation, const FTextureID* surfaceskinids, const TArray<VSMatrix>& boneData, int boneStartPosition) override {
 			if (!isLoaded())
 				return;
 			FMaterial* tex = FMaterial::ValidateTexture(pFTex, false, false);
@@ -969,7 +968,7 @@ namespace s3d
 			{
 				state.EnableModelMatrix(true);
 
-				controllers[i].model->RenderFrame(&renderer, 0, 0, 0, 0, 0, nullptr, {}, 0);
+				controllers[i].model->RenderFrame(&renderer, 0, 0, 0, 0, FTranslationID::fromInt(0), nullptr, {}, 0);
 				state.SetVertexBuffer(screen->mVertexData);
 
 				state.EnableModelMatrix(false);

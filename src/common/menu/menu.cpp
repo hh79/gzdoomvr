@@ -1039,6 +1039,7 @@ DEFINE_FIELD(DListMenuDescriptor, mFontColor2)
 DEFINE_FIELD(DListMenuDescriptor, mAnimatedTransition)
 DEFINE_FIELD(DListMenuDescriptor, mAnimated)
 DEFINE_FIELD(DListMenuDescriptor, mCenter)
+DEFINE_FIELD(DListMenuDescriptor, mCenterText)
 DEFINE_FIELD(DListMenuDescriptor, mDontDim)
 DEFINE_FIELD(DListMenuDescriptor, mDontBlur)
 DEFINE_FIELD(DListMenuDescriptor, mVirtWidth)
@@ -1209,7 +1210,7 @@ bool DMenuItemBase::GetString(int i, char *s, int len)
 		FString retstr;
 		VMReturn ret[2]; ret[0].IntAt(&retval); ret[1].StringAt(&retstr);
 		VMCall(func, params, countof(params), ret, 2);
-		strncpy(s, retstr, len);
+		strncpy(s, retstr.GetChars(), len);
 		return !!retval;
 	}
 	return false;

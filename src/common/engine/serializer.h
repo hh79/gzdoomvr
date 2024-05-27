@@ -20,6 +20,7 @@ class FSoundID;
 union FRenderStyle;
 class DObject;
 class FTextureID;
+struct FTranslationID;
 
 inline bool nullcmp(const void *buffer, size_t length)
 {
@@ -54,6 +55,12 @@ struct NumericValue
 	}
 };
 
+struct FunctionPointerValue
+{
+	FString ClassName;
+	FString FunctionName;
+};
+
 
 class FSerializer
 {
@@ -84,6 +91,7 @@ public:
 	void ReadObjects(bool hubtravel);
 	bool BeginObject(const char *name);
 	void EndObject();
+	bool HasKey(const char* name);
 	bool HasObject(const char* name);
 	bool BeginArray(const char *name);
 	void EndArray();
@@ -101,6 +109,10 @@ public:
 	FSerializer &AddString(const char *key, const char *charptr);
 	const char *GetString(const char *key);
 	FSerializer &ScriptNum(const char *key, int &num);
+
+
+	bool ReadOptionalInt(const char * key, int &into);
+
 	bool isReading() const
 	{
 		return r != nullptr;
@@ -233,7 +245,12 @@ FSerializer &Serialize(FSerializer &arc, const char *key, FName &value, FName *d
 FSerializer &Serialize(FSerializer &arc, const char *key, FSoundID &sid, FSoundID *def);
 FSerializer &Serialize(FSerializer &arc, const char *key, FString &sid, FString *def);
 FSerializer &Serialize(FSerializer &arc, const char *key, NumericValue &sid, NumericValue *def);
-FSerializer &Serialize(FSerializer &arc, const char *key, struct ModelOverride &sid, struct ModelOverride *def);
+FSerializer &Serialize(FSerializer &arc, const char *key, struct ModelOverride &mo, struct ModelOverride *def);
+FSerializer &Serialize(FSerializer &arc, const char *key, struct AnimModelOverride &mo, struct AnimModelOverride *def);
+FSerializer &Serialize(FSerializer &arc, const char *key, struct AnimOverride &ao, struct AnimOverride *def);
+FSerializer& Serialize(FSerializer& arc, const char* key, FTranslationID& value, FTranslationID* defval);
+
+void SerializeFunctionPointer(FSerializer &arc, const char *key, FunctionPointerValue *&p);
 
 template <typename T/*, typename = std::enable_if_t<std::is_base_of_v<DObject, T>>*/>
 FSerializer &Serialize(FSerializer &arc, const char *key, T *&value, T **)
@@ -241,6 +258,16 @@ FSerializer &Serialize(FSerializer &arc, const char *key, T *&value, T **)
 	DObject *v = static_cast<DObject*>(value);
 	Serialize(arc, key, v, nullptr);
 	value = static_cast<T*>(v);
+	return arc;
+}
+
+template<class A, class B>
+FSerializer &Serialize(FSerializer &arc, const char *key, std::pair<A, B> &value, std::pair<A, B> *def)
+{
+	arc.BeginObject(key);
+	Serialize(arc, "first", value.first, def ? &def->first : nullptr);
+	Serialize(arc, "second", value.second, def ? &def->second : nullptr);
+	arc.EndObject();
 	return arc;
 }
 

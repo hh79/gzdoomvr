@@ -171,7 +171,7 @@ DPSprite::DPSprite(player_t *owner, AActor *caller, int id)
   InterpolateTic(false),
   firstTic(true),
   Tics(0),
-  Translation(0),
+  Translation(NO_TRANSLATION),
   Flags(0),
   Owner(owner),
   State(nullptr),
@@ -993,9 +993,9 @@ DEFINE_ACTION_FUNCTION(AActor, A_OverlayPivotAlign)
 	if (pspr != nullptr)
 	{
 		if (halign >= PSPA_LEFT && halign <= PSPA_RIGHT)
-			pspr->HAlign |= halign;
+			pspr->HAlign = halign;
 		if (valign >= PSPA_TOP && valign <= PSPA_BOTTOM)
-			pspr->VAlign |= valign;
+			pspr->VAlign = valign;
 	}
 	return 0;
 }
@@ -1023,12 +1023,12 @@ DEFINE_ACTION_FUNCTION(AActor, A_OverlayTranslation)
 		{
 			// an empty string resets to the default
 			// (unlike AActor::SetTranslation, there is no Default block for PSprites, so just set the translation to 0)
-			pspr->Translation = 0;
+			pspr->Translation = NO_TRANSLATION;
 			return 0;
 		}
 
-		int tnum = R_FindCustomTranslation(trname);
-		if (tnum >= 0)
+		auto tnum = R_FindCustomTranslation(trname);
+		if (tnum != INVALID_TRANSLATION)
 		{
 			pspr->Translation = tnum;
 		}

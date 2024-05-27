@@ -604,7 +604,7 @@ static int P_Move (AActor *actor)
 				move = move.Rotated(anglediff);
 				oldangle = actor->Angles.Yaw;
 			}
-			start = actor->Pos() - move * i / steps;
+			start = actor->Pos().XY() - move * i / steps;
 		}
 	}
 
@@ -628,9 +628,14 @@ static int P_Move (AActor *actor)
 	// actually walking down a step.
 	if (try_ok &&
 		!((actor->flags & MF_NOGRAVITY) || CanJump(actor))
-			&& actor->Z() > actor->floorz && !(actor->flags2 & MF2_ONMOBJ))
+			&& !(actor->flags2 & MF2_ONMOBJ))
+
 	{
-		if (actor->Z() <= actor->floorz + actor->MaxStepHeight)
+		// account for imprecisions with slopes. A walking actor should never be below its own floorz.
+		if (actor->Z() < actor->floorz)
+			actor->SetZ(actor->floorz);
+
+		else if (actor->Z() <= actor->floorz + actor->MaxStepHeight)
 		{
 			double savedz = actor->Z();
 			actor->SetZ(actor->floorz);
@@ -755,6 +760,10 @@ int P_SmartMove(AActor* actor)
 		)
 		actor->movedir = DI_NODIR;    // avoid the area (most of the time anyway)
 
+	if (actor->flags2 & MF2_FLOORCLIP)
+	{
+		actor->AdjustFloorClip();
+	}
 	return true;
 }
 
@@ -1262,7 +1271,7 @@ int P_IsVisible(AActor *lookee, AActor *other, INTBOOL allaround, FLookExParams 
 	{
 		maxdist = params->maxDist;
 		mindist = params->minDist;
-		fov = params->Fov;
+		fov = allaround ? DAngle::fromDeg(0.) : params->Fov; // [RK] Account for LOOKALLAROUND flag.
 	}
 	else
 	{
@@ -2077,7 +2086,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_LookEx)
 				{
 					// If we find a valid target here, the wandering logic should *not*
 					// be activated! If would cause the seestate to be set twice.
-					if (P_LookForPlayers(self, true, &params))
+					if (P_LookForPlayers(self, (self->flags4 & MF4_LOOKALLAROUND), &params)) // [RK] Passing true for allround should only occur if the flag is actually set.
 						goto seeyou;
 				}
 
@@ -2434,7 +2443,7 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 	}
 	if (!actor->target || !(actor->target->flags & MF_SHOOTABLE))
 	{ // look for a new target
-		if (actor->target != NULL && (actor->target->flags2 & MF2_NONSHOOTABLE))
+		if (actor->target != nullptr && (actor->target->flags2 & MF2_NONSHOOTABLE))
 		{
 			// Target is only temporarily unshootable, so remember it.
 			actor->lastenemy = actor->target;
@@ -2442,17 +2451,17 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 			// hurt our old one temporarily.
 			actor->threshold = 0;
 		}
-		if (P_LookForPlayers (actor, !(flags & CHF_DONTLOOKALLAROUND), NULL) && actor->target != actor->goal)
+		if (P_LookForPlayers (actor, !(flags & CHF_DONTLOOKALLAROUND), nullptr) && actor->target != actor->goal)
 		{ // got a new target
 			actor->flags7 &= ~MF7_INCHASE;
 			return;
 		}
-		if (actor->target == NULL)
+		if (actor->target == nullptr)
 		{
 			if (flags & CHF_DONTIDLE || actor->flags & MF_FRIENDLY)
 			{
 				//A_Look(actor);
-				if (actor->target == NULL)
+				if (actor->target == nullptr)
 				{
 					if (!dontmove) A_Wander(actor);
 					actor->flags7 &= ~MF7_INCHASE;
@@ -2564,11 +2573,10 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 				}
 			}
 		}
-
 	}
 
 	// [RH] Scared monsters attack less frequently
-	if (((actor->target->player == NULL ||
+	if (((actor->target->player == nullptr ||
 		!((actor->target->player->cheats & CF_FRIGHTENING) || (actor->target->flags8 & MF8_FRIGHTENING))) &&
 		!(actor->flags4 & MF4_FRIGHTENED)) ||
 		pr_scaredycat() < 43)
@@ -2617,7 +2625,7 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 			lookForBetter = true;
 		}
 		AActor * oldtarget = actor->target;
-		gotNew = P_LookForPlayers (actor, !(flags & CHF_DONTLOOKALLAROUND), NULL);
+		gotNew = P_LookForPlayers (actor, !(flags & CHF_DONTLOOKALLAROUND), nullptr);
 		if (lookForBetter)
 		{
 			actor->flags3 |= MF3_NOSIGHTCHECK;
@@ -2640,7 +2648,7 @@ void A_DoChase (AActor *actor, bool fastchase, FState *meleestate, FState *missi
 	if ((!fastchase || !actor->FastChaseStrafeCount) && !dontmove)
 	{
 		// CANTLEAVEFLOORPIC handling was completely missing in the non-serpent functions.
-		DVector2 old = actor->Pos();
+		DVector2 old = actor->Pos().XY();
 		int oldgroup = actor->PrevPortalGroup;
 		FTextureID oldFloor = actor->floorpic;
 
@@ -2802,7 +2810,7 @@ bool P_CheckForResurrection(AActor* self, bool usevilestates, FState* state = nu
 
 				corpsehit->flags |= MF_SOLID;
 				corpsehit->Height = corpsehit->GetDefault()->Height;
-				bool check = P_CheckPosition(corpsehit, corpsehit->Pos());
+				bool check = P_CheckPosition(corpsehit, corpsehit->Pos().XY());
 				corpsehit->flags = oldflags;
 				corpsehit->radius = oldradius;
 				corpsehit->Height = oldheight;
@@ -2891,13 +2899,8 @@ void A_Chase(AActor *self)
 	A_DoChase(self, false, self->MeleeState, self->MissileState, true, gameinfo.nightmarefast, false, 0);
 }
 
-DEFINE_ACTION_FUNCTION(AActor, A_Chase)
+void A_ChaseNative(AActor * self, int meleelabel, int missilelabel, int flags)
 {
-	PARAM_SELF_PROLOGUE(AActor);
-	PARAM_STATELABEL(meleelabel);
-	PARAM_STATELABEL(missilelabel);
-	PARAM_INT(flags);
-
 	FName meleename = ENamedName(meleelabel - 0x10000000);
 	FName missilename = ENamedName(missilelabel - 0x10000000);
 	if (meleename != NAME__a_chase_default || missilename != NAME__a_chase_default)
@@ -2905,7 +2908,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Chase)
 		FState *melee = StateLabels.GetState(meleelabel, self->GetClass());
 		FState *missile = StateLabels.GetState(missilelabel, self->GetClass());
 		if ((flags & CHF_RESURRECT) && P_CheckForResurrection(self, false))
-			return 0;
+			return;
 
 		A_DoChase(self, !!(flags&CHF_FASTCHASE), melee, missile, !(flags&CHF_NOPLAYACTIVE),
 			!!(flags&CHF_NIGHTMAREFAST), !!(flags&CHF_DONTMOVE), flags & 0x3fffffff);
@@ -2914,6 +2917,36 @@ DEFINE_ACTION_FUNCTION(AActor, A_Chase)
 	{
 		A_DoChase(self, false, self->MeleeState, self->MissileState, true, gameinfo.nightmarefast, false, 0);
 	}
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_Chase, A_ChaseNative)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_STATELABEL(meleelabel);
+	PARAM_STATELABEL(missilelabel);
+	PARAM_INT(flags);
+
+	A_ChaseNative(self, meleelabel, missilelabel, flags);
+
+	return 0;
+}
+
+void A_DoChaseNative(AActor * self, FState *melee, FState *missile, int flags)
+{
+	if ((flags & CHF_RESURRECT) && P_CheckForResurrection(self, false))
+		return;
+	A_DoChase(self, !!(flags&CHF_FASTCHASE), melee, missile, !(flags&CHF_NOPLAYACTIVE), !!(flags&CHF_NIGHTMAREFAST), !!(flags&CHF_DONTMOVE), flags & 0x3fffffff);
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_DoChase, A_DoChaseNative)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_STATE(melee);
+	PARAM_STATE(missile);
+	PARAM_INT(flags);
+
+	A_DoChaseNative(self, melee, missile, flags);
+
 	return 0;
 }
 
@@ -3106,7 +3139,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Pain)
 	PARAM_SELF_PROLOGUE(AActor);
 
 	// [RH] Vary player pain sounds depending on health (ala Quake2)
-	if (self->player && self->player->morphTics == 0)
+	if (self->player && self->alternative == nullptr)
 	{
 		const char *pain_amount;
 		FSoundID sfx_id = NO_SOUND;

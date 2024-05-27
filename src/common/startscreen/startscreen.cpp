@@ -367,7 +367,7 @@ FStartScreen* GetGameStartScreen(int max_progress)
 			Printf("Error creating start screen: %s\n", err.what());
 			// fall through to the generic startup screen
 		}
-		//return CreateGenericStartScreen(max_progress);
+		return CreateGenericStartScreen(max_progress);
 	}
 	return nullptr;
 }
@@ -570,8 +570,8 @@ void FStartScreen::CreateHeader()
 	fcolor.rgbBlue = BPART(GameStartupInfo.FgColor);
 	fcolor.rgbReserved = 255;
 	ClearBlock(HeaderBitmap, bcolor, 0, 0, HeaderBitmap.GetWidth(), HeaderBitmap.GetHeight());
-	int textlen = SizeOfText(GameStartupInfo.Name);
-	DrawString(HeaderBitmap, (HeaderBitmap.GetWidth() >> 4) - (textlen >> 1), 0.5, GameStartupInfo.Name, fcolor, bcolor);
+	int textlen = SizeOfText(GameStartupInfo.Name.GetChars());
+	DrawString(HeaderBitmap, (HeaderBitmap.GetWidth() >> 4) - (textlen >> 1), 0.5, GameStartupInfo.Name.GetChars(), fcolor, bcolor);
 	NetBitmap.Create(StartupBitmap.GetWidth() * Scale, 16);
 }
 
@@ -588,7 +588,7 @@ void FStartScreen::DrawNetStatus(int found, int total)
 	RgbQuad black = { 0, 0, 0, 255 };
 	RgbQuad gray = { 100, 100, 100, 255 };
 	ClearBlock(NetBitmap, black, 0, NetBitmap.GetHeight() - 16, NetBitmap.GetWidth(), 16);
-	DrawString(NetBitmap, 0, 0, NetMessageString, gray, black);
+	DrawString(NetBitmap, 0, 0, NetMessageString.GetChars(), gray, black);
 	char of[10];
 	mysnprintf(of, 10, "%d/%d", found, total);
 	int siz = SizeOfText(of);
@@ -654,9 +654,11 @@ void FStartScreen::NetProgress(int count)
 
 void FStartScreen::Render(bool force)
 {
+	static uint64_t minwaittime = 30;
+
 	auto nowtime = I_msTime();
 	// Do not refresh too often. This function gets called a lot more frequently than the screen can update.
-	if (nowtime - screen->FrameTime > 30 || force)
+	if (nowtime - screen->FrameTime > minwaittime || force)
 	{
 		screen->FrameTime = nowtime;
 		screen->BeginFrame();
@@ -689,6 +691,9 @@ void FStartScreen::Render(bool force)
 		screen->Update();
 		twod->OnFrameDone();
 	}
+	auto newtime = I_msTime();
+	if ((newtime - nowtime) * 2.0 > minwaittime) // slow down drawing the start screen if we're on a slow GPU!
+		minwaittime = (newtime - nowtime) * 2.0;
 }
 
 FImageSource* CreateStartScreenTexture(FBitmap& srcdata);

@@ -71,6 +71,7 @@
 #include "types.h"
 #include "model.h"
 #include "shadowinlines.h"
+#include "i_time.h"
 
 static FRandom pr_camissile ("CustomActorfire");
 static FRandom pr_cabullet ("CustomBullet");
@@ -384,7 +385,7 @@ DEFINE_ACTION_FUNCTION(AActor, GetCVar)
 		PARAM_SELF_PROLOGUE(AActor);
 		PARAM_STRING(cvarname);
 
-		FBaseCVar *cvar = GetCVar(self->player ? int(self->player - players) : -1, cvarname);
+		FBaseCVar *cvar = GetCVar(self->player ? int(self->player - players) : -1, cvarname.GetChars());
 		if (cvar == nullptr)
 		{
 			ret->SetFloat(0);
@@ -414,7 +415,7 @@ DEFINE_ACTION_FUNCTION(AActor, GetCVarString)
 		PARAM_SELF_PROLOGUE(AActor);
 		PARAM_STRING(cvarname);
 
-		FBaseCVar *cvar = GetCVar(self->player? int(self->player - players) : -1, cvarname);
+		FBaseCVar *cvar = GetCVar(self->player? int(self->player - players) : -1, cvarname.GetChars());
 		if (cvar == nullptr)
 		{
 			ret->SetString("");
@@ -1306,7 +1307,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Print)
 		{
 			con_midtime = float(time);
 		}
-		FString formatted = strbin1(text);
+		FString formatted = strbin1(text.GetChars());
 		C_MidPrint(font, formatted.GetChars());
 		con_midtime = saved;
 	}
@@ -1338,7 +1339,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_PrintBold)
 	{
 		con_midtime = float(time);
 	}
-	FString formatted = strbin1(text);
+	FString formatted = strbin1(text.GetChars());
 	C_MidPrint(font, formatted.GetChars(), true);
 	con_midtime = saved;
 	return 0;
@@ -1359,7 +1360,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Log)
 	if (local && !self->CheckLocalView()) return 0;
 
 	if (text[0] == '$') text = GStrings(&text[1]);
-	FString formatted = strbin1(text);
+	FString formatted = strbin1(text.GetChars());
 	Printf("%s\n", formatted.GetChars());
 	return 0;
 }
@@ -1607,18 +1608,6 @@ DEFINE_ACTION_FUNCTION(AActor, A_SpawnDebris)
 // A_SpawnParticle
 //
 //===========================================================================
-enum SPFflag
-{
-	SPF_FULLBRIGHT =		1,
-	SPF_RELPOS =			1 << 1,
-	SPF_RELVEL =			1 << 2,
-	SPF_RELACCEL =			1 << 3,
-	SPF_RELANG =			1 << 4,
-	SPF_NOTIMEFREEZE =		1 << 5,
-	SPF_ROLL =				1 << 6,
-	SPF_REPLACE =           1 << 7,
-	SPF_NO_XY_BILLBOARD =	1 << 8,
-};
 
 DEFINE_ACTION_FUNCTION(AActor, A_SpawnParticle)
 {
@@ -1702,7 +1691,8 @@ DEFINE_ACTION_FUNCTION(AActor, A_SpawnParticleEx)
 	PARAM_FLOAT	(rollacc)
 
 	startalpha = clamp(startalpha, 0., 1.);
-	if (fadestep > 0) fadestep = clamp(fadestep, 0., 1.);
+	fadestep = clamp(fadestep, -1.0, 1.0);
+
 	size = fabs(size);
 	if (lifetime != 0)
 	{
@@ -2055,7 +2045,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_Respawn)
 	}
 	else
 	{
-		oktorespawn = P_CheckPosition(self, self->Pos(), true);
+		oktorespawn = P_CheckPosition(self, self->Pos().XY(), true);
 	}
 
 	if (oktorespawn)
@@ -2686,7 +2676,7 @@ DEFINE_ACTION_FUNCTION(AActor, CheckFlag)
 	PARAM_INT	(checkpointer);
 
 	AActor *owner = COPY_AAPTR(self, checkpointer);
-	ACTION_RETURN_BOOL(owner != nullptr && CheckActorFlag(owner, flagname));
+	ACTION_RETURN_BOOL(owner != nullptr && CheckActorFlag(owner, flagname.GetChars()));
 }
 
 
@@ -3332,8 +3322,8 @@ DEFINE_ACTION_FUNCTION(AActor, A_Quake)
 	PARAM_SELF_PROLOGUE(AActor);
 	PARAM_FLOAT		(intensity);
 	PARAM_INT		(duration);
-	PARAM_INT		(damrad);
-	PARAM_INT		(tremrad);
+	PARAM_FLOAT		(damrad);
+	PARAM_FLOAT		(tremrad);
 	PARAM_SOUND	(sound);
 
 	P_StartQuake(self->Level, self, 0, intensity, duration, damrad, tremrad, sound);
@@ -3355,14 +3345,14 @@ DEFINE_ACTION_FUNCTION(AActor, A_QuakeEx)
 	PARAM_FLOAT(intensityY);
 	PARAM_FLOAT(intensityZ);
 	PARAM_INT(duration);
-	PARAM_INT(damrad);
-	PARAM_INT(tremrad);
+	PARAM_FLOAT(damrad);
+	PARAM_FLOAT(tremrad);
 	PARAM_SOUND(sound);
 	PARAM_INT(flags);
 	PARAM_FLOAT(mulWaveX);
 	PARAM_FLOAT(mulWaveY);
 	PARAM_FLOAT(mulWaveZ);
-	PARAM_INT(falloff);
+	PARAM_FLOAT(falloff);
 	PARAM_INT(highpoint);
 	PARAM_FLOAT(rollIntensity);
 	PARAM_FLOAT(rollWave);
@@ -3504,7 +3494,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_WolfAttack)
 
 	// Target can dodge if it can see enemy
 	DAngle angle = absangle(self->target->Angles.Yaw, self->target->AngleTo(self));
-	bool dodge = (P_CheckSight(self->target, self) && angle < DAngle::fromDeg(30. * 256. / 360.));	// 30 byteangles ~ 21°
+	bool dodge = (P_CheckSight(self->target, self) && angle < DAngle::fromDeg(30. * 256. / 360.));	// 30 byteangles ~ 21Â°
 
 	// Distance check is simplistic
 	DVector2 vec = self->Vec2To(self->target);
@@ -4752,7 +4742,7 @@ DEFINE_ACTION_FUNCTION(AActor, CheckBlock)
 		if (flags & CBF_NOACTORS)	fpass |= PCM_NOACTORS;
 		if (flags & CBF_NOLINES)	fpass |= PCM_NOLINES;
 		mobj->SetZ(pos.Z);
-		checker = P_CheckMove(mobj, pos, fpass);
+		checker = P_CheckMove(mobj, pos.XY(), fpass);
 		mobj->SetZ(oldpos.Z);
 	}
 	else
@@ -5080,7 +5070,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_SprayDecal)
 	PARAM_FLOAT(direction_z);
 	PARAM_BOOL(useBloodColor);
 	PARAM_COLOR(decalColor);
-	SprayDecal(self, name, dist, DVector3(offset_x, offset_y, offset_z), DVector3(direction_x, direction_y, direction_z), useBloodColor, decalColor);
+	SprayDecal(self, name.GetChars(), dist, DVector3(offset_x, offset_y, offset_z), DVector3(direction_x, direction_y, direction_z), useBloodColor, decalColor);
 	return 0;
 }
 
@@ -5089,7 +5079,7 @@ DEFINE_ACTION_FUNCTION(AActor, A_SetMugshotState)
 	PARAM_SELF_PROLOGUE(AActor);
 	PARAM_STRING(name);
 	if (self->CheckLocalView())
-		StatusBar->SetMugShotState(name);
+		StatusBar->SetMugShotState(name.GetChars());
 	return 0;
 }
 
@@ -5100,11 +5090,235 @@ DEFINE_ACTION_FUNCTION(AActor, A_SetMugshotState)
 // This function allows the changing of an actor's modeldef, or models and/or skins at a given index
 //==========================================================================
 
+static void EnsureModelData(AActor * mobj)
+{
+	if (mobj->modelData == nullptr)
+	{
+		auto ptr = Create<DActorModelData>();
+		
+		ptr->flags = (mobj->hasmodel ? MODELDATA_HADMODEL : 0);
+		ptr->modelDef = nullptr;
+		
+		mobj->modelData = ptr;
+		mobj->hasmodel = true;
+		GC::WriteBarrier(mobj, ptr);
+	}
+}
+
+static void CleanupModelData(AActor * mobj)
+{
+	if ( !(mobj->flags9 & MF9_DECOUPLEDANIMATIONS)
+		&& mobj->modelData->models.Size() == 0
+		&& mobj->modelData->modelFrameGenerators.Size() == 0
+		&& mobj->modelData->skinIDs.Size() == 0
+		&& mobj->modelData->animationIDs.Size() == 0
+		&& mobj->modelData->modelDef == nullptr
+		&&(mobj->modelData->flags & ~MODELDATA_HADMODEL) == 0 )
+	{
+		mobj->hasmodel = mobj->modelData->flags & MODELDATA_HADMODEL;
+		mobj->modelData->Destroy();
+		mobj->modelData = nullptr;
+	}
+}
+
+enum ESetAnimationFlags
+{
+	SAF_INSTANT = 1 << 0,
+	SAF_LOOP = 1 << 1,
+	SAF_NOOVERRIDE = 1 << 2,
+};
+
+extern double getCurrentFrame(const AnimOverride &anim, double tic);
+
+void SetAnimationInternal(AActor * self, FName animName, double framerate, int startFrame, int loopFrame, int endFrame, int interpolateTics, int flags, double ticFrac)
+{
+	if(!self) ThrowAbortException(X_READ_NIL, "In function parameter self");
+
+	if(!(self->flags9 & MF9_DECOUPLEDANIMATIONS))
+	{
+		ThrowAbortException(X_OTHER, "Cannot set animation for non-decoupled actors");
+	}
+
+	if(!BaseSpriteModelFrames.CheckKey(self->GetClass()))
+	{
+		ThrowAbortException(X_OTHER, "Actor class is missing a MODELDEF definition or a MODELDEF BaseFrame");
+	}
+
+	if(interpolateTics <= 0) interpolateTics = 1;
+
+	EnsureModelData(self);
+
+	if(animName == NAME_None)
+	{
+		self->modelData->curAnim.flags = ANIMOVERRIDE_NONE;
+		return;
+	}
+
+	double tic = self->Level->totaltime;
+	if ((ConsoleState == c_up || ConsoleState == c_rising) && (menuactive == MENU_Off || menuactive == MENU_OnNoPause) && !self->Level->isFrozen())
+	{
+		tic += ticFrac;
+	}
+
+	FModel * mdl = Models[(self->modelData->models.Size() > 0 && self->modelData->models[0].modelID >= 0) ? self->modelData->models[0].modelID : BaseSpriteModelFrames[self->GetClass()].modelIDs[0]];
+
+	int animStart = mdl->FindFirstFrame(animName);
+	if(animStart == FErr_NotFound)
+	{
+		self->modelData->curAnim.flags = ANIMOVERRIDE_NONE;
+		Printf("Could not find animation %s\n", animName.GetChars());
+		return;
+	}
+
+	if((flags & SAF_NOOVERRIDE) && self->modelData->curAnim.flags != ANIMOVERRIDE_NONE && self->modelData->curAnim.firstFrame == animStart)
+	{
+		//same animation as current, skip setting it
+		return;
+	}
+
+	if(!(flags & SAF_INSTANT))
+	{
+		self->modelData->prevAnim = self->modelData->curAnim;
+	}
+
+	int animEnd = mdl->FindLastFrame(animName);
+
+	if(framerate < 0)
+	{
+		framerate = mdl->FindFramerate(animName);
+	}
+	
+	int len = animEnd - animStart;
+
+	if(startFrame >= len)
+	{
+		self->modelData->curAnim.flags = ANIMOVERRIDE_NONE;
+		Printf("frame %d (startFrame) is past the end of animation %s\n", startFrame, animName.GetChars());
+		return;
+	}
+	else if(loopFrame >= len)
+	{
+		self->modelData->curAnim.flags = ANIMOVERRIDE_NONE;
+		Printf("frame %d (loopFrame) is past the end of animation %s\n", startFrame, animName.GetChars());
+		return;
+	}
+	else if(endFrame >= len)
+	{
+		self->modelData->curAnim.flags = ANIMOVERRIDE_NONE;
+		Printf("frame %d (endFrame) is past the end of animation %s\n", endFrame, animName.GetChars());
+		return;
+	}
+	
+	self->modelData->curAnim.firstFrame = animStart;
+	self->modelData->curAnim.lastFrame = endFrame < 0 ? animEnd - 1 : animStart + endFrame;
+	self->modelData->curAnim.startFrame = startFrame < 0 ? animStart : animStart + startFrame;
+	self->modelData->curAnim.loopFrame = loopFrame < 0 ? animStart : animStart + loopFrame;
+	self->modelData->curAnim.flags = (flags&SAF_LOOP) ? ANIMOVERRIDE_LOOP : 0;
+	self->modelData->curAnim.switchTic = tic;
+	self->modelData->curAnim.framerate = (float)framerate;
+
+	if(!(flags & SAF_INSTANT))
+	{
+		self->modelData->prevAnim.startFrame = getCurrentFrame(self->modelData->prevAnim, tic);
+		
+		self->modelData->curAnim.startTic = floor(tic) + interpolateTics;
+	}
+	else
+	{
+		self->modelData->curAnim.startTic = tic;
+	}
+}
+
+void SetAnimationNative(AActor * self, int i_animName, double framerate, int startFrame, int loopFrame, int endFrame, int interpolateTics, int flags)
+{
+	SetAnimationInternal(self, FName(ENamedName(i_animName)), framerate, startFrame, loopFrame, endFrame, interpolateTics, flags, 1);
+}
+
+void SetAnimationUINative(AActor * self, int i_animName, double framerate, int startFrame, int loopFrame, int endFrame, int interpolateTics, int flags)
+{
+	SetAnimationInternal(self, FName(ENamedName(i_animName)), framerate, startFrame, loopFrame, endFrame, interpolateTics, flags, I_GetTimeFrac());
+}
+
+void SetAnimationFrameRateInternal(AActor * self, double framerate, double ticFrac)
+{
+	if(!self) ThrowAbortException(X_READ_NIL, "In function parameter self");
+
+	if(!(self->flags9 & MF9_DECOUPLEDANIMATIONS))
+	{
+		ThrowAbortException(X_OTHER, "Cannot set animation for non-decoupled actors");
+	}
+
+	EnsureModelData(self);
+
+	if(self->modelData->curAnim.flags & ANIMOVERRIDE_NONE) return;
+
+	if(framerate < 0)
+	{
+		ThrowAbortException(X_OTHER, "Cannot set negative framerate");
+	}
+
+
+	double tic = self->Level->totaltime;
+	if ((ConsoleState == c_up || ConsoleState == c_rising) && (menuactive == MENU_Off || menuactive == MENU_OnNoPause) && !self->Level->isFrozen())
+	{
+		tic += ticFrac;
+	}
+
+	if(self->modelData->curAnim.startTic >= tic)
+	{
+		self->modelData->curAnim.framerate = (float)framerate;
+		return;
+	}
+
+	double frame = getCurrentFrame(self->modelData->curAnim, tic);
+
+	self->modelData->curAnim.startFrame = frame;
+	self->modelData->curAnim.startTic = tic;
+	self->modelData->curAnim.switchTic = tic;
+	self->modelData->curAnim.framerate = (float)framerate;
+}
+
+void SetAnimationFrameRateNative(AActor * self, double framerate)
+{
+	SetAnimationFrameRateInternal(self, framerate, 1);
+}
+
+void SetAnimationFrameRateUINative(AActor * self, double framerate)
+{
+	SetAnimationFrameRateInternal(self, framerate, I_GetTimeFrac());
+}
+
+void SetModelFlag(AActor * self, int flag)
+{
+	EnsureModelData(self);
+	self->modelData->flags |= MODELDATA_OVERRIDE_FLAGS;
+	self->modelData->overrideFlagsSet |= flag;
+	self->modelData->overrideFlagsClear &= ~flag;
+}
+
+void ClearModelFlag(AActor * self, int flag)
+{
+	EnsureModelData(self);
+	self->modelData->flags |= MODELDATA_OVERRIDE_FLAGS;
+	self->modelData->overrideFlagsClear |= flag;
+	self->modelData->overrideFlagsSet &= ~flag;
+}
+
+void ResetModelFlags(AActor * self)
+{
+	if(self->modelData)
+	{
+		self->modelData->overrideFlagsClear = 0;
+		self->modelData->overrideFlagsSet = 0;
+		self->modelData->flags &= ~MODELDATA_OVERRIDE_FLAGS;
+	}
+}
+
 enum ChangeModelFlags
 {
-	CMDL_WEAPONTOPLAYER = 1,
-	CMDL_HIDEMODEL = 1 << 1,
-	CMDL_USESURFACESKIN = 1 << 2,
+	CMDL_WEAPONTOPLAYER		= 1 << 0,
+	CMDL_HIDEMODEL			= 1 << 1,
+	CMDL_USESURFACESKIN		= 1 << 2,
 };
 
 void ChangeModelNative(
@@ -5126,14 +5340,16 @@ void ChangeModelNative(
 ) {
 	if(!self) ThrowAbortException(X_READ_NIL, "In function parameter self");
 
-	FName modeldef { ENamedName(i_modeldef) };
+	FName n_modeldef { ENamedName(i_modeldef) };
 	FName model { ENamedName(i_model) };
 	FName skin { ENamedName(i_skin) };
 	FName animation { ENamedName(i_animation) };
 
-	if (modeldef != NAME_None && PClass::FindClass(modeldef.GetChars()) == nullptr)
+	PClass * modeldef = nullptr;
+
+	if (n_modeldef != NAME_None && (modeldef = PClass::FindActor(n_modeldef.GetChars())) == nullptr)
 	{
-		Printf("Attempt to pass invalid modeldef name %s in %s.", modeldef.GetChars(), self->GetCharacterName());
+		Printf("Attempt to pass invalid modeldef name %s in %s.\n", n_modeldef.GetChars(), self->GetCharacterName());
 		return;
 	}
 
@@ -5151,17 +5367,7 @@ void ChangeModelNative(
 	if (skinpath.Len() != 0 && skinpath[(int)skinpath.Len() - 1] != '/') skinpath += '/';
 	if (animationpath.Len() != 0 && animationpath[(int)animationpath.Len() - 1] != '/') animationpath += '/';
 
-	if (mobj->modelData == nullptr)
-	{
-		auto ptr = Create<DActorModelData>();
-
-		ptr->hasModel = mobj->hasmodel;
-		ptr->modelDef = NAME_None;
-
-		mobj->modelData = ptr;
-		mobj->hasmodel = true;
-		GC::WriteBarrier(mobj, ptr);
-	};
+	EnsureModelData(mobj);
 
 	int queryModel = !(flags & CMDL_HIDEMODEL) ? model != NAME_None ? FindModel(modelpath.GetChars(), model.GetChars()) : -1 : -2;
 	int queryAnimation = animation != NAME_None ? FindModel(animationpath.GetChars(), animation.GetChars()) : -1;
@@ -5251,63 +5457,7 @@ void ChangeModelNative(
 		}
 	}
 
-	//[SM] - We need to serialize file paths and model names so that they are pushed on loading save files. Likewise, let's not include models that were already parsed when initialized.
-	if (queryModel >= 0)
-	{
-		FString fullName;
-		fullName.Format("%s%s", modelpath.GetChars(), model.GetChars());
-		bool found = false;
-
-		for (auto &m : savedModelFiles) 
-		{
-			if(m.CompareNoCase(fullName) == 0)
-			{
-				found = true;
-				break;
-			}
-		}
-		if(!found) for (auto &m : Models)
-		{
-			if (m->mFileName.CompareNoCase(fullName) == 0)
-			{
-				found = true;
-				break;
-			}
-		}
-		if(!found) savedModelFiles.Push(fullName);
-	}
-	//Same for animations
-	if (queryAnimation >= 0)
-	{
-		FString fullName;
-		fullName.Format("%s%s", animationpath.GetChars(), animation.GetChars());
-		bool found = false;
-
-		for (auto &m : savedModelFiles) 
-		{
-			if(m.CompareNoCase(fullName) == 0)
-			{
-				found = true;
-				break;
-			}
-		}
-		if(!found) for (auto &m : Models)
-		{
-			if (m->mFileName.CompareNoCase(fullName) == 0)
-			{
-				found = true;
-				break;
-			}
-		}
-		if(!found) savedModelFiles.Push(fullName);
-	}
-
-	if (mobj->modelData->models.Size() == 0 && mobj->modelData->modelFrameGenerators.Size() == 0 && mobj->modelData->skinIDs.Size() == 0 && mobj->modelData->animationIDs.Size() == 0 && modeldef == NAME_None)
-	{
-		mobj->hasmodel = mobj->modelData->hasModel;
-		mobj->modelData->Destroy();
-		mobj->modelData = nullptr;
-	}
+	CleanupModelData(mobj);
 
 	return;
 }
@@ -5329,6 +5479,87 @@ DEFINE_ACTION_FUNCTION_NATIVE(AActor, A_ChangeModel, ChangeModelNative)
 	PARAM_NAME(animation);
 	
 	ChangeModelNative(self,stateowner,stateinfo,modeldef.GetIndex(),modelindex,modelpath,model.GetIndex(),skinindex,skinpath,skin.GetIndex(),flags,generatorindex,animationindex,animationpath,animation.GetIndex());
+
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, SetAnimation, SetAnimationNative)
+{
+	PARAM_ACTION_PROLOGUE(AActor);
+	PARAM_NAME(animName);
+	PARAM_FLOAT(framerate);
+	PARAM_INT(startFrame);
+	PARAM_INT(loopFrame);
+	PARAM_INT(endFrame);
+	PARAM_INT(interpolateTics);
+	PARAM_INT(flags);
+	
+	SetAnimationInternal(self, animName, framerate, startFrame, loopFrame, endFrame, interpolateTics, flags, 1);
+
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, SetAnimationUI, SetAnimationUINative)
+{
+	PARAM_ACTION_PROLOGUE(AActor);
+	PARAM_NAME(animName);
+	PARAM_FLOAT(framerate);
+	PARAM_INT(startFrame);
+	PARAM_INT(loopFrame);
+	PARAM_INT(endFrame);
+	PARAM_INT(interpolateTics);
+	PARAM_INT(flags);
+	
+	SetAnimationInternal(self, animName, framerate, startFrame, loopFrame, endFrame, interpolateTics, flags, I_GetTimeFrac());
+
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, SetAnimationFrameRate, SetAnimationFrameRateNative)
+{
+	PARAM_ACTION_PROLOGUE(AActor);
+	PARAM_FLOAT(framerate);
+	
+	SetAnimationFrameRateInternal(self, framerate, 1);
+
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, SetAnimationFrameRateUI, SetAnimationFrameRateUINative)
+{
+	PARAM_ACTION_PROLOGUE(AActor);
+	PARAM_FLOAT(framerate);
+	
+	SetAnimationFrameRateInternal(self, framerate, I_GetTimeFrac());
+
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, SetModelFlag, SetModelFlag)
+{
+	PARAM_ACTION_PROLOGUE(AActor);
+	PARAM_INT(flag);
+
+	SetModelFlag(self, flag);
+
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, ClearModelFlag, ClearModelFlag)
+{
+	PARAM_ACTION_PROLOGUE(AActor);
+	PARAM_INT(flag);
+
+	ClearModelFlag(self, flag);
+
+	return 0;
+}
+
+DEFINE_ACTION_FUNCTION_NATIVE(AActor, ResetModelFlags, ResetModelFlags)
+{
+	PARAM_ACTION_PROLOGUE(AActor);
+	
+	ResetModelFlags(self);
 
 	return 0;
 }

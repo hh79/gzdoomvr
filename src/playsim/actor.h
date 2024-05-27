@@ -438,10 +438,11 @@ enum ActorFlag8
 // --- mobj.flags9 ---
 enum ActorFlag9
 {
-	MF9_SHADOWAIM = 0x00000001,	// [inkoalawetrust] Monster still gets aim penalty from aiming at shadow actors even with MF6_SEEINVISIBLE on.
-	MF9_DOSHADOWBLOCK = 0x00000002,	// [inkoalawetrust] Should the monster look for SHADOWBLOCK actors ?
-	MF9_SHADOWBLOCK = 0x00000004,	// [inkoalawetrust] Actors in the line of fire with this flag trigger the MF_SHADOW aiming penalty.
-	MF9_SHADOWAIMVERT = 0x00000008,	// [inkoalawetrust] Monster aim is also offset vertically when aiming at shadow actors.
+	MF9_SHADOWAIM				= 0x00000001,	// [inkoalawetrust] Monster still gets aim penalty from aiming at shadow actors even with MF6_SEEINVISIBLE on.
+	MF9_DOSHADOWBLOCK			= 0x00000002,	// [inkoalawetrust] Should the monster look for SHADOWBLOCK actors ?
+	MF9_SHADOWBLOCK				= 0x00000004,	// [inkoalawetrust] Actors in the line of fire with this flag trigger the MF_SHADOW aiming penalty.
+	MF9_SHADOWAIMVERT			= 0x00000008,	// [inkoalawetrust] Monster aim is also offset vertically when aiming at shadow actors.
+	MF9_DECOUPLEDANIMATIONS	= 0x00000010,	// [RL0] Decouple model animations from states
 };
 
 // --- mobj.renderflags ---
@@ -480,7 +481,7 @@ enum ActorRenderFlag
 	RF_MASKROTATION		= 0x00200000, // [MC] Only draw the actor when viewed from a certain angle range.
 	RF_ABSMASKANGLE		= 0x00400000, // [MC] The mask rotation does not offset by the actor's angle.
 	RF_ABSMASKPITCH		= 0x00800000, // [MC] The mask rotation does not offset by the actor's pitch.
-	RF_INTERPOLATEANGLES		= 0x01000000, // [MC] Allow interpolation of the actor's angle, pitch and roll.
+	RF_INTERPOLATEANGLES = 0x01000000, // [MC] Allow interpolation of the actor's angle, pitch and roll.
 	RF_MAYBEINVISIBLE	= 0x02000000,
 	RF_DONTINTERPOLATE	= 0x04000000,	// no render interpolation ever!
 
@@ -488,13 +489,18 @@ enum ActorRenderFlag
 	RF_ZDOOMTRANS		= 0x10000000,	// is not normally transparent in Vanilla Doom
 	RF_CASTSPRITESHADOW = 0x20000000,	// actor will cast a sprite shadow
 	RF_NOINTERPOLATEVIEW = 0x40000000,	// don't interpolate the view next frame if this actor is a camera.
-	RF_NOSPRITESHADOW = 0x80000000,		// actor will not cast a sprite shadow
+	RF_NOSPRITESHADOW	= 0x80000000,	// actor will not cast a sprite shadow
 };
 
 enum ActorRenderFlag2
 {
 	RF2_INVISIBLEINMIRRORS		= 0x0001,	// [Nash] won't render in mirrors
 	RF2_ONLYVISIBLEINMIRRORS	= 0x0002,	// [Nash] only renders in mirrors
+	RF2_BILLBOARDFACECAMERA		= 0x0004,	// Sprite billboard face camera (override gl_billboard_faces_camera)
+	RF2_BILLBOARDNOFACECAMERA	= 0x0008,	// Sprite billboard face camera angle (override gl_billboard_faces_camera)
+	RF2_FLIPSPRITEOFFSETX		= 0x0010,
+	RF2_FLIPSPRITEOFFSETY		= 0x0020,
+	RF2_CAMFOLLOWSPLAYER		= 0x0040,	// Matches the cam's base position and angles to the main viewpoint.
 };
 
 // This translucency value produces the closest match to Heretic's TINTTAB.
@@ -689,22 +695,61 @@ enum EViewPosFlags // [MC] Flags for SetViewPos.
 	VPSF_ABSOLUTEPOS =		1 << 2,			// Use absolute position.
 };
 
+enum EAnimOverrideFlags
+{
+	ANIMOVERRIDE_NONE	= 1 << 0, // no animation
+	ANIMOVERRIDE_LOOP	= 1 << 1, // animation loops, otherwise it stays on the last frame once it ends
+};
+
+struct AnimOverride
+{
+	int firstFrame;
+	int lastFrame;
+	int loopFrame;
+	double startFrame;
+	int flags = ANIMOVERRIDE_NONE;
+	float framerate;
+	double startTic; // when the current animation started (changing framerates counts as restarting) (or when animation starts if interpolating from previous animation)
+	double switchTic; // when the animation was changed -- where to interpolate the switch from
+};
+
 struct ModelOverride
 {
 	int modelID;
 	TArray<FTextureID> surfaceSkinIDs;
 };
 
+struct AnimModelOverride
+{
+	int id;
+
+	AnimModelOverride() = default;
+
+	AnimModelOverride(int i) : id(i) {}
+	operator int() { return id; }
+};
+
+enum EModelDataFlags
+{
+	MODELDATA_HADMODEL =		1 << 0,
+	MODELDATA_OVERRIDE_FLAGS =	1 << 1,
+};
+
 class DActorModelData : public DObject
 {
 	DECLARE_CLASS(DActorModelData, DObject);
 public:
-	FName					modelDef;
-	bool					hasModel;
-	TArray<ModelOverride>	models;
-	TArray<FTextureID>		skinIDs;
-	TArray<int>				animationIDs;
-	TArray<int>				modelFrameGenerators;
+	PClass *					modelDef;
+	TArray<ModelOverride>		models;
+	TArray<FTextureID>			skinIDs;
+	TArray<AnimModelOverride>	animationIDs;
+	TArray<int>					modelFrameGenerators;
+	int							flags;
+	int							overrideFlagsSet;
+	int							overrideFlagsClear;
+
+	AnimOverride curAnim;
+	AnimOverride prevAnim; // used for interpolation when switching anims
 
 	DActorModelData() = default;
 	virtual void Serialize(FSerializer& arc) override;
@@ -735,7 +780,7 @@ public:
 			Flags = f;
 	}
 
-	bool isZero()
+	bool isZero() const
 	{
 		return Offset.isZero();
 	}
@@ -759,6 +804,7 @@ public:
 	virtual void PostSerialize() override;
 	virtual void PostBeginPlay() override;		// Called immediately before the actor's first tick
 	virtual void Tick() override;
+	void EnableNetworking(const bool enable) override;
 
 	static AActor *StaticSpawn (FLevelLocals *Level, PClassActor *type, const DVector3 &pos, replace_t allowreplacement, bool SpawningMapThing = false);
 
@@ -867,6 +913,9 @@ public:
 
 	// Returns true if this view is considered "local" for the player.
 	bool CheckLocalView() const;
+	// Allows for enabling/disabling client-side rendering in a way the playsim can't access.
+	void DisableLocalRendering(const unsigned int pNum, const bool disable);
+	bool ShouldRenderLocally() const;
 
 	// Finds the first item of a particular type.
 	AActor *FindInventory (PClassActor *type, bool subclass=false);
@@ -960,14 +1009,14 @@ public:
 
 	double Distance2DSquared(AActor *other, bool absolute = false)
 	{
-		DVector2 otherpos = absolute ? other->Pos() : other->PosRelative(this);
-		return (Pos().XY() - otherpos).LengthSquared();
+		DVector3 otherpos = absolute ? other->Pos() : other->PosRelative(this);
+		return (Pos().XY() - otherpos.XY()).LengthSquared();
 	}
 
 	double Distance2D(AActor *other, bool absolute = false) const
 	{
-		DVector2 otherpos = absolute ? other->Pos() : other->PosRelative(this);
-		return (Pos().XY() - otherpos).Length();
+		DVector3 otherpos = absolute ? other->Pos() : other->PosRelative(this);
+		return (Pos().XY() - otherpos.XY()).Length();
 	}
 
 	double Distance2D(double x, double y) const
@@ -997,19 +1046,19 @@ public:
 
 	DAngle AngleTo(AActor *other, bool absolute = false)
 	{
-		DVector2 otherpos = absolute ? other->Pos() : other->PosRelative(this);
-		return VecToAngle(otherpos - Pos().XY());
+		DVector3 otherpos = absolute ? other->Pos() : other->PosRelative(this);
+		return VecToAngle(otherpos.XY() - Pos().XY());
 	}
 
 	DAngle AngleTo(AActor *other, double oxofs, double oyofs, bool absolute = false) const
 	{
-		DVector2 otherpos = absolute ? other->Pos() : other->PosRelative(this);
-		return VecToAngle(otherpos - Pos() + DVector2(oxofs, oyofs));
+		DVector3 otherpos = absolute ? other->Pos() : other->PosRelative(this);
+		return VecToAngle(otherpos.XY() - Pos().XY() + DVector2(oxofs, oyofs));
 	}
 
 	DVector2 Vec2To(AActor *other) const
 	{
-		return other->PosRelative(this) - Pos();
+		return other->PosRelative(this).XY() - Pos().XY();
 	}
 
 	DVector3 Vec3To(AActor *other) const
@@ -1069,6 +1118,7 @@ public:
 
 	DAngle			SpriteAngle;
 	DAngle			SpriteRotation;
+	DVector2		AutomapOffsets;		// Offset the actors' sprite view on the automap by these coordinates.
 	DRotator		Angles;
 	DRotator		ViewAngles;			// Angle offsets for cameras
 	TObjPtr<DViewPosition*> ViewPos;			// Position offsets for cameras
@@ -1082,11 +1132,12 @@ public:
 	FRenderStyle	RenderStyle;		// Style to draw this actor with
 	FTextureID		picnum;				// Draw this instead of sprite if valid
 	uint32_t			fillcolor;			// Color to draw when STYLE_Shaded
-	uint32_t			Translation;
+	FTranslationID			Translation;
 
 	uint32_t			RenderRequired;		// current renderer must have this feature set
 	uint32_t			RenderHidden;		// current renderer must *not* have any of these features
 
+	bool				NoLocalRender;		// DO NOT EXPORT THIS! This is a way to disable rendering such that the playsim cannot access it.
 	ActorRenderFlags	renderflags;		// Different rendering flags
 	ActorRenderFlags2	renderflags2;		// More rendering flags...
 	ActorFlags		flags;
@@ -1263,7 +1314,7 @@ public:
 	uint8_t FriendPlayer;				// [RH] Player # + 1 this friendly monster works for (so 0 is no player, 1 is player 0, etc)
 	double FloatBobStrength;
 	PalEntry BloodColor;
-	uint32_t BloodTranslation;
+	FTranslationID BloodTranslation;
 
 	// [RH] Stuff that used to be part of an Actor Info
 	FSoundID SeeSound;
@@ -1320,6 +1371,9 @@ public:
 	int SpawnTime;
 	uint32_t SpawnOrder;
 
+	// landing speed from a jump with normal gravity (squats the player's view)
+	// (note: this is put into AActor instead of the PlayerPawn because non-players also use the value)
+	double LandingSpeed;
 
 	// ThingIDs
 	void SetTID (int newTID);
@@ -1440,6 +1494,11 @@ public:
 		result.Pitch = PrevAngles.Pitch + deltaangle(PrevAngles.Pitch, Angles.Pitch) * ticFrac;
 		result.Roll = PrevAngles.Roll + deltaangle(PrevAngles.Roll, Angles.Roll) * ticFrac;
 		return result;
+	}
+	float GetSpriteOffset(bool y) const
+	{
+		if (y)	return (float)(renderflags2 & RF2_FLIPSPRITEOFFSETY ? SpriteOffset.Y : -SpriteOffset.Y);
+		else	return (float)(renderflags2 & RF2_FLIPSPRITEOFFSETX ? SpriteOffset.X : -SpriteOffset.X);
 	}
 	DAngle GetSpriteAngle(DAngle viewangle, double ticFrac)
 	{
@@ -1696,8 +1755,8 @@ struct FTranslatedLineTarget
 	bool unlinked;	// found by a trace that went through an unlinked portal.
 };
 
-
-void StaticPointerSubstitution(AActor* old, AActor* notOld);
+void PlayerPointerSubstitution(AActor* oldPlayer, AActor* newPlayer, bool removeOld);
+int MorphPointerSubstitution(AActor* from, AActor* to);
 
 #define S_FREETARGMOBJ	1
 

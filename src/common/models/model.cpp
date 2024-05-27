@@ -43,10 +43,9 @@
 #include "texturemanager.h"
 #include "modelrenderer.h"
 
-
-TArray<FString> savedModelFiles;
 TDeletingArray<FModel*> Models;
 TArray<FSpriteModelFrame> SpriteModelFrames;
+TMap<void*, FSpriteModelFrame> BaseSpriteModelFrames;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -89,7 +88,7 @@ void FModel::DestroyVertexBuffer()
 
 static int FindGFXFile(FString & fn)
 {
-	int lump = fileSystem.CheckNumForFullName(fn);	// if we find something that matches the name plus the extension, return it and do not enter the substitution logic below.
+	int lump = fileSystem.CheckNumForFullName(fn.GetChars());	// if we find something that matches the name plus the extension, return it and do not enter the substitution logic below.
 	if (lump != -1) return lump;
 
 	int best = -1;
@@ -101,7 +100,7 @@ static int FindGFXFile(FString & fn)
 
 	for (const char ** extp=extensions; *extp; extp++)
 	{
-		lump = fileSystem.CheckNumForFullName(fn + *extp);
+		lump = fileSystem.CheckNumForFullName((fn + *extp).GetChars());
 		if (lump >= best)  best = lump;
 	}
 	return best;
@@ -149,7 +148,7 @@ unsigned FindModel(const char * path, const char * modelfile, bool silent)
 
 	if (path) fullname.Format("%s%s", path, modelfile);
 	else fullname = modelfile;
-	int lump = fileSystem.CheckNumForFullName(fullname);
+	int lump = fileSystem.CheckNumForFullName(fullname.GetChars());
 
 	if (lump<0)
 	{
@@ -159,18 +158,24 @@ unsigned FindModel(const char * path, const char * modelfile, bool silent)
 
 	for(unsigned i = 0; i< Models.Size(); i++)
 	{
-		if (!Models[i]->mFileName.CompareNoCase(fullname)) return i;
+		if (Models[i]->mFileName.CompareNoCase(fullname) == 0) return i;
 	}
 
-	int len = fileSystem.FileLength(lump);
+	auto len = fileSystem.FileLength(lump);
+	if (len >= 0x80000000ll)
+	{
+		Printf(PRINT_HIGH, "LoadModel: File to large: '%s'\n", fullname.GetChars());
+		return -1;
+	}
+
 	auto lumpd = fileSystem.ReadFile(lump);
-	const char * buffer = lumpd.GetString();
+	const char * buffer = lumpd.string();
 
 	if ( (size_t)fullname.LastIndexOf("_d.3d") == fullname.Len()-5 )
 	{
 		FString anivfile = fullname.GetChars();
 		anivfile.Substitute("_d.3d","_a.3d");
-		if ( fileSystem.CheckNumForFullName(anivfile) > 0 )
+		if ( fileSystem.CheckNumForFullName(anivfile.GetChars()) > 0 )
 		{
 			model = new FUE1Model;
 		}
@@ -179,7 +184,7 @@ unsigned FindModel(const char * path, const char * modelfile, bool silent)
 	{
 		FString datafile = fullname.GetChars();
 		datafile.Substitute("_a.3d","_d.3d");
-		if ( fileSystem.CheckNumForFullName(datafile) > 0 )
+		if ( fileSystem.CheckNumForFullName(datafile.GetChars()) > 0 )
 		{
 			model = new FUE1Model;
 		}
@@ -207,7 +212,7 @@ unsigned FindModel(const char * path, const char * modelfile, bool silent)
 
 	if (model != nullptr)
 	{
-		if (!model->Load(path, lump, buffer, len))
+		if (!model->Load(path, lump, buffer, (int)len))
 		{
 			delete model;
 			return -1;
@@ -229,6 +234,7 @@ unsigned FindModel(const char * path, const char * modelfile, bool silent)
 	}
 	// The vertex buffer cannot be initialized here because this gets called before OpenGL is initialized
 	model->mFileName = fullname;
+	model->mFilePath = {path, modelfile};
 	return Models.Push(model);
 }
 

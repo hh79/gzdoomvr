@@ -40,6 +40,7 @@
 #include "thingdef.h"
 #include "r_state.h"
 #include "templates.h"
+#include "codegen.h"
 
 
 // stores indices for symbolic state labels for some old-style DECORATE functions.
@@ -66,15 +67,20 @@ DEFINE_ACTION_FUNCTION(FState, GetSpriteTexture)
 	PARAM_INT(skin);
 	PARAM_FLOAT(scalex);
 	PARAM_FLOAT(scaley);
+	PARAM_INT(spritenum);
+	PARAM_INT(framenum);
+
+	int sprnum = (spritenum == -1) ? self->sprite : spritenum;
+	int frnum = (framenum == -1) ? self->GetFrame() : framenum;
 
 	spriteframe_t *sprframe;
 	if (skin == 0)
 	{
-		sprframe = &SpriteFrames[sprites[self->sprite].spriteframes + self->GetFrame()];
+		sprframe = &SpriteFrames[sprites[sprnum].spriteframes + frnum];
 	}
 	else
 	{
-		sprframe = &SpriteFrames[sprites[Skins[skin].sprite].spriteframes + self->GetFrame()];
+		sprframe = &SpriteFrames[sprites[Skins[skin].sprite].spriteframes + frnum];
 		scalex = Skins[skin].Scale.X;
 		scaley = Skins[skin].Scale.Y;
 	}
@@ -381,7 +387,7 @@ FState *FStateLabelStorage::GetState(int pos, PClassActor *cls, bool exact)
 
 //==========================================================================
 //
-// State label conversion function for scripts
+// State label conversion functions for scripts
 //
 //==========================================================================
 
@@ -389,7 +395,7 @@ DEFINE_ACTION_FUNCTION(AActor, FindState)
 {
 	PARAM_SELF_PROLOGUE(AActor);
 	PARAM_INT(newstate);
-	PARAM_BOOL(exact)
+	PARAM_BOOL(exact);
 	ACTION_RETURN_STATE(StateLabels.GetState(newstate, self->GetClass(), exact));
 }
 
@@ -399,6 +405,15 @@ DEFINE_ACTION_FUNCTION(AActor, ResolveState)
 	PARAM_ACTION_PROLOGUE(AActor);
 	PARAM_STATE_ACTION(newstate);
 	ACTION_RETURN_STATE(newstate);
+}
+
+// find state by string instead of label
+DEFINE_ACTION_FUNCTION(AActor, FindStateByString)
+{
+	PARAM_SELF_PROLOGUE(AActor);
+	PARAM_STRING(newstate);
+	PARAM_BOOL(exact);
+	ACTION_RETURN_STATE(self->GetClass()->FindStateByString(newstate.GetChars(), exact));
 }
 
 //==========================================================================
@@ -491,8 +506,10 @@ int FStateDefinitions::GetStateLabelIndex (FName statename)
 	{
 		return -1;
 	}
-	assert((size_t)std->State <= StateArray.Size() + 1);
-	return (int)((ptrdiff_t)std->State - 1);
+	if ((size_t)std->State <= StateArray.Size() + 1)
+		return (int)((ptrdiff_t)std->State - 1);
+	else
+		return -1;
 }
 
 //==========================================================================
@@ -702,7 +719,7 @@ void FStateDefinitions::RetargetStatePointers (intptr_t count, const char *targe
 			}
 			else
 			{
-				statelist[i].State = (FState *)copystring (target);
+				statelist[i].State = (FState *)FxAlloc.Strdup(target);
 				statelist[i].DefineFlags = SDF_LABEL;
 			}
 		}
@@ -803,7 +820,6 @@ FState *FStateDefinitions::ResolveGotoLabel (PClassActor *mytype, char *name)
 	{
 		Printf (TEXTCOLOR_RED "Attempt to get invalid state %s from actor %s.\n", label, type->TypeName.GetChars());
 	}
-	delete[] namestart;		// free the allocated string buffer
 	return state;
 }
 
@@ -867,7 +883,7 @@ bool FStateDefinitions::SetGotoLabel(const char *string)
 	// copy the text - this must be resolved later!
 	if (laststate != NULL)
 	{ // Following a state definition: Modify it.
-		laststate->NextState = (FState*)copystring(string);	
+		laststate->NextState = (FState*)FxAlloc.Strdup(string);
 		laststate->DefineFlags = SDF_LABEL;
 		laststatebeforelabel = NULL;
 		return true;
@@ -877,7 +893,7 @@ bool FStateDefinitions::SetGotoLabel(const char *string)
 		RetargetStates (lastlabel+1, string);
 		if (laststatebeforelabel != NULL)
 		{
-			laststatebeforelabel->NextState = (FState*)copystring(string);	
+			laststatebeforelabel->NextState = (FState*)FxAlloc.Strdup(string);
 			laststatebeforelabel->DefineFlags = SDF_LABEL;
 			laststatebeforelabel = NULL;
 		}

@@ -58,7 +58,7 @@ VSMatrix FHWModelRenderer::GetViewToWorldMatrix()
 	return objectToWorldMatrix;
 }
 
-void FHWModelRenderer::PrepareRenderHUDModel(FSpriteModelFrame* smf, FVector3 translation, FVector3 rotation, FVector3 rotation_pivot, VSMatrix &objectToWorldMatrix)
+void FHWModelRenderer::PrepareRenderHUDModel(FSpriteModelFrame* smf, FVector3 translation, FVector3 rotation, FVector3 rotation_pivot, VSMatrix &objectToWorldMatrix, int smf_flags)
 {
 	auto vrmode = VRMode::GetVRMode(true);
 	if (vrmode->mEyeCount > 1)
@@ -114,11 +114,11 @@ void FHWModelRenderer::PrepareRenderHUDModel(FSpriteModelFrame* smf, FVector3 tr
 	}
 	else
 	{
-		FModelRenderer::PrepareRenderHUDModel(smf, translation, rotation, rotation_pivot, objectToWorldMatrix);
+		FModelRenderer::PrepareRenderHUDModel(smf, translation, rotation, rotation_pivot, objectToWorldMatrix, smf_flags);
 	}
 }
 
-void FHWModelRenderer::BeginDrawModel(FRenderStyle style, FSpriteModelFrame *smf, const VSMatrix &objectToWorldMatrix, bool mirrored)
+void FHWModelRenderer::BeginDrawModel(FRenderStyle style, int smf_flags, const VSMatrix &objectToWorldMatrix, bool mirrored)
 {
 	state.SetDepthFunc(DF_LEqual);
 	state.EnableTexture(true);
@@ -126,7 +126,7 @@ void FHWModelRenderer::BeginDrawModel(FRenderStyle style, FSpriteModelFrame *smf
 	// This solves a few of the problems caused by the lack of depth sorting.
 	// [Nash] Don't do back face culling if explicitly specified in MODELDEF
 	// TO-DO: Implement proper depth sorting.
-	if (!(style == DefaultRenderStyle()) && !(smf->flags & MDL_DONTCULLBACKFACES))
+	if ((smf_flags & MDL_FORCECULLBACKFACES) || (!(style == DefaultRenderStyle()) && !(smf_flags & MDL_DONTCULLBACKFACES)))
 	{
 		state.SetCulling((mirrored ^ portalState.isMirrored()) ? Cull_CCW : Cull_CW);
 	}
@@ -135,16 +135,16 @@ void FHWModelRenderer::BeginDrawModel(FRenderStyle style, FSpriteModelFrame *smf
 	state.EnableModelMatrix(true);
 }
 
-void FHWModelRenderer::EndDrawModel(FRenderStyle style, FSpriteModelFrame *smf)
+void FHWModelRenderer::EndDrawModel(FRenderStyle style, int smf_flags)
 {
 	state.SetBoneIndexBase(-1);
 	state.EnableModelMatrix(false);
 	state.SetDepthFunc(DF_Less);
-	if (!(style == DefaultRenderStyle()) && !(smf->flags & MDL_DONTCULLBACKFACES))
+	if ((smf_flags & MDL_FORCECULLBACKFACES) || (!(style == DefaultRenderStyle()) && !(smf_flags & MDL_DONTCULLBACKFACES)))
 		state.SetCulling(Cull_None);
 }
 
-void FHWModelRenderer::BeginDrawHUDModel(FRenderStyle style, const VSMatrix &objectToWorldMatrix, bool mirrored)
+void FHWModelRenderer::BeginDrawHUDModel(FRenderStyle style, const VSMatrix &objectToWorldMatrix, bool mirrored, int smf_flags)
 {
 	state.SetDepthFunc(DF_LEqual);
 	state.SetDepthClamp(true);
@@ -152,7 +152,7 @@ void FHWModelRenderer::BeginDrawHUDModel(FRenderStyle style, const VSMatrix &obj
 	// [BB] In case the model should be rendered translucent, do back face culling.
 	// This solves a few of the problems caused by the lack of depth sorting.
 	// TO-DO: Implement proper depth sorting.
-	if (!(style == DefaultRenderStyle()))
+	if (!(style == DefaultRenderStyle()) || (smf_flags & MDL_FORCECULLBACKFACES))
 	{
 		state.SetCulling((mirrored ^ portalState.isMirrored()) ? Cull_CW : Cull_CCW);
 	}
@@ -161,13 +161,13 @@ void FHWModelRenderer::BeginDrawHUDModel(FRenderStyle style, const VSMatrix &obj
 	state.EnableModelMatrix(true);
 }
 
-void FHWModelRenderer::EndDrawHUDModel(FRenderStyle style)
+void FHWModelRenderer::EndDrawHUDModel(FRenderStyle style, int smf_flags)
 {
 	state.SetBoneIndexBase(-1);
 	state.EnableModelMatrix(false);
 
 	state.SetDepthFunc(DF_Less);
-	if (!(style == DefaultRenderStyle()))
+	if (!(style == DefaultRenderStyle()) || (smf_flags & MDL_FORCECULLBACKFACES))
 		state.SetCulling(Cull_None);
 }
 
@@ -181,7 +181,7 @@ void FHWModelRenderer::SetInterpolation(double inter)
 	state.SetInterpolationFactor((float)inter);
 }
 
-void FHWModelRenderer::SetMaterial(FGameTexture *skin, bool clampNoFilter, int translation)
+void FHWModelRenderer::SetMaterial(FGameTexture *skin, bool clampNoFilter, FTranslationID translation)
 {
 	state.SetMaterial(skin, UF_Skin, 0, clampNoFilter ? CLAMP_NOFILTER : CLAMP_NONE, translation, -1);
 	state.SetLightIndex(modellightindex);

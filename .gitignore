@@ -94,3 +94,4 @@ config.h
 .kdev4
 *.kdev4
 /build__
+gzdoom-crash.log

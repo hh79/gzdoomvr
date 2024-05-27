@@ -36,6 +36,7 @@
 #ifndef __BITMAP_H__
 #define __BITMAP_H__
 
+#include <cstring>
 #include "palentry.h"
 
 struct FCopyInfo;
@@ -108,7 +109,7 @@ public:
 
 	FBitmap(const FBitmap &other) = delete;	// disallow because in nearly all cases this creates an unwanted copy.
 
-	FBitmap(FBitmap &&other)
+	FBitmap(FBitmap &&other) noexcept
 	{
 		data = other.data;
 		Pitch = other.Pitch;
@@ -122,7 +123,7 @@ public:
 
 	FBitmap &operator=(const FBitmap &other) = delete;	// disallow because in nearly all cases this creates an unwanted copy. Use Copy instead.
 
-	FBitmap &operator=(FBitmap &&other)
+	FBitmap &operator=(FBitmap &&other) noexcept
 	{
 		if (data != nullptr && FreeBuffer) delete[] data;
 		data = other.data;
@@ -252,6 +253,8 @@ public:
 		CopyPixelDataRGB(originx, originy, src.GetPixels(), src.GetWidth(), src.GetHeight(), 4, src.GetWidth()*4, 0, CF_BGRA, inf);
 	}
 
+
+	friend class FTexture;
 };
 
 bool ClipCopyPixelRect(const FClipRect *cr, int &originx, int &originy,

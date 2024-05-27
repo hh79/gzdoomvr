@@ -186,7 +186,7 @@ public:
 		name += Sources[axis] == PAD ? "Pad " : "Joystick ";
 		name += AxisSources[axis] == X ? "Horizontal" : "Vertical";
 
-		return name;
+		return name.GetChars();
 	}
 
 	float GetAxisScale(int axis)
