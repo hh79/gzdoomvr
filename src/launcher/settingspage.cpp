@@ -27,6 +27,7 @@ SettingsPage::SettingsPage(LauncherWindow* launcher, int* autoloadflags) : Widge
 	LightsCheckbox = new CheckboxLabel(this);
 	BrightmapsCheckbox = new CheckboxLabel(this);
 	WidescreenCheckbox = new CheckboxLabel(this);
+	LaserSightCheckbox = new CheckboxLabel(this);
 
 #ifdef RENDER_BACKENDS
 	BackendLabel = new TextLabel(this);
@@ -43,6 +44,7 @@ SettingsPage::SettingsPage(LauncherWindow* launcher, int* autoloadflags) : Widge
 	LightsCheckbox->SetChecked(flags & 2);
 	BrightmapsCheckbox->SetChecked(flags & 4);
 	WidescreenCheckbox->SetChecked(flags & 8);
+	LaserSightCheckbox->SetChecked(flags & 16);
 
 #ifdef RENDER_BACKENDS
 	OpenGLCheckbox->SetRadioStyle(true);
@@ -119,6 +121,7 @@ void SettingsPage::Save()
 	if (LightsCheckbox->GetChecked()) flags |= 2;
 	if (BrightmapsCheckbox->GetChecked()) flags |= 4;
 	if (WidescreenCheckbox->GetChecked()) flags |= 8;
+	if (LaserSightCheckbox->GetChecked()) flags |= 16;
 	*AutoloadFlags = flags;
 
 #ifdef RENDER_BACKENDS
@@ -141,6 +144,7 @@ void SettingsPage::UpdateLanguage()
 	LightsCheckbox->SetText(GStrings("PICKER_LIGHTS"));
 	BrightmapsCheckbox->SetText(GStrings("PICKER_BRIGHTMAPS"));
 	WidescreenCheckbox->SetText(GStrings("PICKER_WIDESCREEN"));
+	LaserSightCheckbox->SetText(GStrings("PICKER_LASERSIGHT"));
 
 #ifdef RENDER_BACKENDS
 	BackendLabel->SetText(GStrings("PICKER_PREFERBACKEND"));
@@ -182,6 +186,16 @@ void SettingsPage::OnGeometryChanged()
 	WidescreenCheckbox->SetFrameGeometry(w - panelWidth, y, panelWidth, WidescreenCheckbox->GetPreferredHeight());
 	y += DontAskAgainCheckbox->GetPreferredHeight();
 
+	LaserSightCheckbox->SetFrameGeometry(0.0, y, 190.0, LaserSightCheckbox->GetPreferredHeight());
+	y += LaserSightCheckbox->GetPreferredHeight();
+
+	if (!hideLanguage)
+	{
+		LangLabel->SetFrameGeometry(0.0, y, w, LangLabel->GetPreferredHeight());
+		y += LangLabel->GetPreferredHeight();
+		LangList->SetFrameGeometry(0.0, y, w, std::max(h - y, 0.0));
+	}
+
 #ifdef RENDER_BACKENDS
 	double x = w / 2 - panelWidth / 2;
 	y = 0;
@@ -198,10 +212,4 @@ void SettingsPage::OnGeometryChanged()
 	y += GLESCheckbox->GetPreferredHeight();
 #endif
 
-	if (!hideLanguage)
-	{
-		LangLabel->SetFrameGeometry(0.0, y, w, LangLabel->GetPreferredHeight());
-		y += LangLabel->GetPreferredHeight();
-		LangList->SetFrameGeometry(0.0, y, w, std::max(h - y, 0.0));
-	}
 }

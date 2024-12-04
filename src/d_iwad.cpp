@@ -57,6 +57,7 @@ EXTERN_CVAR(Bool, disableautoload)
 EXTERN_CVAR(Bool, autoloadlights)
 EXTERN_CVAR(Bool, autoloadbrightmaps)
 EXTERN_CVAR(Bool, autoloadwidescreen)
+EXTERN_CVAR(Bool, autoloadlasersight)
 EXTERN_CVAR(String, language)
 
 //==========================================================================
@@ -761,6 +762,7 @@ int FIWadManager::IdentifyVersion (std::vector<std::string>&wadfiles, const char
 				if (autoloadlights) flags |= 2;
 				if (autoloadbrightmaps) flags |= 4;
 				if (autoloadwidescreen) flags |= 8;
+				if (autoloadlasersight) flags |= 16;
 
 				pick = I_PickIWad(&wads[0], (int)wads.Size(), queryiwad, pick, flags);
 				if (pick >= 0)
@@ -769,6 +771,7 @@ int FIWadManager::IdentifyVersion (std::vector<std::string>&wadfiles, const char
 					autoloadlights = !!(flags & 2);
 					autoloadbrightmaps = !!(flags & 4);
 					autoloadwidescreen = !!(flags & 8);
+					autoloadlasersight = !!(flags & 16);
 
 					// The newly selected IWAD becomes the new default
 					defaultiwad = mIWadInfos[picks[pick].mInfoIndex].Name.GetChars();
