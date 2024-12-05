@@ -3,7 +3,7 @@
 #include <zwidget/core/widget.h>
 #include "gstrings.h"
 
-#define RENDER_BACKENDS
+//#define RENDER_BACKENDS
 
 class LauncherWindow;
 class TextLabel;
@@ -27,6 +27,7 @@ private:
 	TextLabel* LangLabel = nullptr;
 	TextLabel* GeneralLabel = nullptr;
 	TextLabel* ExtrasLabel = nullptr;
+	TextLabel* VRModeLabel = nullptr;
 	CheckboxLabel* FullscreenCheckbox = nullptr;
 	CheckboxLabel* DisableAutoloadCheckbox = nullptr;
 	CheckboxLabel* DontAskAgainCheckbox = nullptr;

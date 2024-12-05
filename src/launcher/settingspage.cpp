@@ -21,6 +21,7 @@ SettingsPage::SettingsPage(LauncherWindow* launcher, int* autoloadflags) : Widge
 	LangLabel = new TextLabel(this);
 	GeneralLabel = new TextLabel(this);
 	ExtrasLabel = new TextLabel(this);
+	VRModeLabel = new TextLabel(this);
 	FullscreenCheckbox = new CheckboxLabel(this);
 	DisableAutoloadCheckbox = new CheckboxLabel(this);
 	DontAskAgainCheckbox = new CheckboxLabel(this);
@@ -138,6 +139,7 @@ void SettingsPage::UpdateLanguage()
 	LangLabel->SetText(GStrings("OPTMNU_LANGUAGE"));
 	GeneralLabel->SetText(GStrings("PICKER_GENERAL"));
 	ExtrasLabel->SetText(GStrings("PICKER_EXTRA"));
+	VRModeLabel->SetText(GStrings("PICKER_VRMODE"));
 	FullscreenCheckbox->SetText(GStrings("PICKER_FULLSCREEN"));
 	DisableAutoloadCheckbox->SetText(GStrings("PICKER_NOAUTOLOAD"));
 	DontAskAgainCheckbox->SetText(GStrings("PICKER_DONTASK"));
@@ -186,15 +188,6 @@ void SettingsPage::OnGeometryChanged()
 	WidescreenCheckbox->SetFrameGeometry(w - panelWidth, y, panelWidth, WidescreenCheckbox->GetPreferredHeight());
 	y += DontAskAgainCheckbox->GetPreferredHeight();
 
-	LaserSightCheckbox->SetFrameGeometry(0.0, y, 190.0, LaserSightCheckbox->GetPreferredHeight());
-	y += LaserSightCheckbox->GetPreferredHeight();
-
-	if (!hideLanguage)
-	{
-		LangLabel->SetFrameGeometry(0.0, y, w, LangLabel->GetPreferredHeight());
-		y += LangLabel->GetPreferredHeight();
-		LangList->SetFrameGeometry(0.0, y, w, std::max(h - y, 0.0));
-	}
 
 #ifdef RENDER_BACKENDS
 	double x = w / 2 - panelWidth / 2;
@@ -211,5 +204,19 @@ void SettingsPage::OnGeometryChanged()
 	GLESCheckbox->SetFrameGeometry(x, y, 190.0, GLESCheckbox->GetPreferredHeight());
 	y += GLESCheckbox->GetPreferredHeight();
 #endif
+
+	if (!hideLanguage)
+	{
+		LangLabel->SetFrameGeometry(0.0, y, w, LangLabel->GetPreferredHeight());
+		y += LangLabel->GetPreferredHeight();
+		LangList->SetFrameGeometry(0.0, y, w, std::max(h - y, 0.0));
+	}
+
+	double x = w / 2 - panelWidth / 2;
+	y = 0;
+	VRModeLabel->SetFrameGeometry(x, y, 190.0, VRModeLabel->GetPreferredHeight());
+	y += VRModeLabel->GetPreferredHeight();
+	LaserSightCheckbox->SetFrameGeometry(x, y, 190.0, LaserSightCheckbox->GetPreferredHeight());
+	y += LaserSightCheckbox->GetPreferredHeight();
 
 }
