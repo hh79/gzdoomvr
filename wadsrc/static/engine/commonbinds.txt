@@ -51,8 +51,12 @@ del +lookdown
 end centerview
 
 // Xbox 360 / PS2 controllers
-pad_a +use
-pad_y +jump
+pad_start togglemap
+pad_back pause
+pad_a menu_main
+pad_b +use
+axis4plus +jump
+Axis4Minus crouch
 rtrigger +attack
 ltrigger +altattack
 lshoulder weapprev
@@ -61,8 +65,6 @@ dpadleft invprev
 dpadright invnext
 dpaddown invuse
 dpadup togglemap
-pad_start menu_main
-pad_back pause
 lthumb crouch
 
 // Generic gamepad bindings

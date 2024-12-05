@@ -2039,7 +2039,7 @@ static void AddAutoloadFiles(const char *autoname, std::vector<std::string>& all
 		}
 		if ((GameStartupInfo.LoadLaserSight == 1 || (GameStartupInfo.LoadLaserSight != 0 && autoloadlasersight)) && !(Args->CheckParm("-nolasersight")))
 		{
-			const char* lswad = BaseFileSearch("laser-sight-v0.6.pk3", NULL, true, GameConfig);
+			const char* lswad = BaseFileSearch("laser-sight.pk3", NULL, true, GameConfig);
 			if (lswad)
 				D_AddFile(allwads, lswad, true, -1, GameConfig);
 		}
