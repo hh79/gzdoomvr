@@ -303,6 +303,7 @@ struct secplane_t
 	DVector3 normal;
 	double  D, negiC;	// negative iC because that also saves a negation in all methods using this.
 public:
+	bool dithertransflag;	// Render plane with dithering transparency shader (gets reset every frame)
 	friend FSerializer &Serialize(FSerializer &arc, const char *key, secplane_t &p, secplane_t *def);
 
 	void set(double aa, double bb, double cc, double dd)
@@ -503,6 +504,8 @@ enum
 	SECMF_OVERLAPPING		= 512,	// floor and ceiling overlap and require special renderer action.
 	SECMF_NOSKYWALLS		= 1024,	// Do not draw "sky walls"
 	SECMF_LIFT				= 2048,	// For MBF monster AI
+	SECMF_HURTMONSTERS		= 4096, // Monsters in this sector are hurt like players.
+	SECMF_HARMINAIR			= 8192, // Actors in this sector are also hurt mid-air.
 };
 
 enum
@@ -1179,6 +1182,8 @@ enum
 	WALLF_ABSLIGHTING_TOP		= WALLF_ABSLIGHTING_TIER << 0, 	// Top tier light is absolute instead of relative
 	WALLF_ABSLIGHTING_MID		= WALLF_ABSLIGHTING_TIER << 1, 	// Mid tier light is absolute instead of relative
 	WALLF_ABSLIGHTING_BOTTOM 	= WALLF_ABSLIGHTING_TIER << 2,	// Bottom tier light is absolute instead of relative
+
+	WALLF_DITHERTRANS			= 8192,	// Render with dithering transparency shader (gets reset every frame)
 };
 
 struct side_t
@@ -1654,6 +1659,7 @@ struct subsector_t
 	uint32_t	numlines;
 	uint16_t	flags;
 	short		mapsection;
+	FBoundingBox	bbox; // [DVR] For alternative space culling in orthographic projection with no fog of war
 
 	// subsector related GL data
 	int				validcount;

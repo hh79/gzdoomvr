@@ -73,7 +73,7 @@ public:
 		Multiplier = 1;
 		M_LoadJoystickConfig(this);
 	}
-	
+
 	~FOpenVRJoystick()
 	{
 		M_SaveJoystickConfig(this);
@@ -119,7 +119,7 @@ public:
 			axes[Axes[i].GameAxis] += GetAxisValue(i, offState, onState);
 		}
 	}
-	
+
 	float GetYaw()
 	{
 		VRControllerState_t& onState = s3d::OpenVR_GetState(1);
@@ -180,7 +180,7 @@ public:
 	const char* GetAxisName(int axis)
 	{
 		FString& name = Axes[axis].Name;
-		
+
 		name = "";
 		name += s3d::OpenVR_OnHandIsRight() ? (Hands[axis] == ON ? "Right " : "Left ") : (Hands[axis] == ON ? "Left " : "Right ");
 		name += Sources[axis] == PAD ? "Pad " : "Joystick ";
@@ -252,6 +252,18 @@ public:
 	{
 		return "OpenVR";
 	}
+
+	bool AllowsEnabledInBackground()
+	{
+		return true;
+	}
+
+	bool GetEnabledInBackground()
+	{
+		return true;
+	}
+	void SetEnabledInBackground(bool enabled) { }
+
 
 	struct AxisInfo
 	{

@@ -136,23 +136,23 @@ void SettingsPage::Save()
 
 void SettingsPage::UpdateLanguage()
 {
-	LangLabel->SetText(GStrings("OPTMNU_LANGUAGE"));
-	GeneralLabel->SetText(GStrings("PICKER_GENERAL"));
-	ExtrasLabel->SetText(GStrings("PICKER_EXTRA"));
-	VRModeLabel->SetText(GStrings("PICKER_VRMODE"));
-	FullscreenCheckbox->SetText(GStrings("PICKER_FULLSCREEN"));
-	DisableAutoloadCheckbox->SetText(GStrings("PICKER_NOAUTOLOAD"));
-	DontAskAgainCheckbox->SetText(GStrings("PICKER_DONTASK"));
-	LightsCheckbox->SetText(GStrings("PICKER_LIGHTS"));
-	BrightmapsCheckbox->SetText(GStrings("PICKER_BRIGHTMAPS"));
-	WidescreenCheckbox->SetText(GStrings("PICKER_WIDESCREEN"));
-	LaserSightCheckbox->SetText(GStrings("PICKER_LASERSIGHT"));
+	LangLabel->SetText(GStrings.GetString("OPTMNU_LANGUAGE"));
+	GeneralLabel->SetText(GStrings.GetString("PICKER_GENERAL"));
+	ExtrasLabel->SetText(GStrings.GetString("PICKER_EXTRA"));
+	VRModeLabel->SetText(GStrings.GetString("PICKER_VRMODE"));
+	FullscreenCheckbox->SetText(GStrings.GetString("PICKER_FULLSCREEN"));
+	DisableAutoloadCheckbox->SetText(GStrings.GetString("PICKER_NOAUTOLOAD"));
+	DontAskAgainCheckbox->SetText(GStrings.GetString("PICKER_DONTASK"));
+	LightsCheckbox->SetText(GStrings.GetString("PICKER_LIGHTS"));
+	BrightmapsCheckbox->SetText(GStrings.GetString("PICKER_BRIGHTMAPS"));
+	WidescreenCheckbox->SetText(GStrings.GetString("PICKER_WIDESCREEN"));
+	LaserSightCheckbox->SetText(GStrings.GetString("PICKER_LASERSIGHT"));
 
 #ifdef RENDER_BACKENDS
-	BackendLabel->SetText(GStrings("PICKER_PREFERBACKEND"));
-	VulkanCheckbox->SetText(GStrings("OPTVAL_VULKAN"));
-	OpenGLCheckbox->SetText(GStrings("OPTVAL_OPENGL"));
-	GLESCheckbox->SetText(GStrings("OPTVAL_OPENGLES"));
+	BackendLabel->SetText(GStrings.GetString("PICKER_PREFERBACKEND"));
+	VulkanCheckbox->SetText(GStrings.GetString("OPTVAL_VULKAN"));
+	OpenGLCheckbox->SetText(GStrings.GetString("OPTVAL_OPENGL"));
+	GLESCheckbox->SetText(GStrings.GetString("OPTVAL_OPENGLES"));
 #endif
 }
 
@@ -167,7 +167,7 @@ void SettingsPage::OnLanguageChanged(int i)
 
 void SettingsPage::OnGeometryChanged()
 {
-	double panelWidth = 200.0;
+	double panelWidth = 160.0;
 	double y = 0.0;
 	double w = GetWidth();
 	double h = GetHeight();

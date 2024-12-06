@@ -652,7 +652,7 @@ namespace s3d
 	}
 
 	/* virtual */
-	VSMatrix OpenVREyePose::GetProjection(FLOATTYPE fov, FLOATTYPE aspectRatio, FLOATTYPE fovRatio) const
+	VSMatrix OpenVREyePose::GetProjection(FLOATTYPE fov, FLOATTYPE aspectRatio, FLOATTYPE fovRatiom, bool iso_ortho) const
 	{
 		// Ignore those arguments and get the projection from the SDK
 		// VSMatrix vs1 = ShiftedEyePose::GetProjection(fov, aspectRatio, fovRatio);

@@ -101,9 +101,9 @@ static FRandom pr_skullpop ("SkullPop");
 CVAR(Bool, sv_singleplayerrespawn, false, CVAR_SERVERINFO | CVAR_CHEAT)
 
 // Variables for prediction
-CVAR (Bool, cl_noprediction, false, CVAR_ARCHIVE|CVAR_GLOBALCONFIG)
 CVAR(Bool, cl_predict_specials, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 // Deprecated
+CVAR(Bool, cl_noprediction, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, cl_predict_lerpscale, 0.05f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, cl_predict_lerpthreshold, 2.00f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
@@ -123,6 +123,11 @@ CUSTOM_CVAR(Float, cl_rubberband_minmove, 20.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFI
 {
 	if (self < 0.1f)
 		self = 0.1f;
+}
+CUSTOM_CVAR(Float, cl_rubberband_limit, 756.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+{
+	if (self < 0.0f)
+		self = 0.0f;
 }
 
 ColorSetList ColorSets;
@@ -155,6 +160,12 @@ static TArray<msecnode_t *> PredictionPortalSectors_sprev_Backup;
 
 static TArray<FLinePortal *> PredictionPortalLinesBackup;
 static TArray<portnode_t *> PredictionPortalLines_sprev_Backup;
+
+struct
+{
+	DVector3 Pos = {};
+	int Flags = 0;
+} static PredictionViewPosBackup;
 
 // [GRB] Custom player classes
 TArray<FPlayerClass> PlayerClasses;
@@ -347,6 +358,7 @@ void player_t::CopyFrom(player_t &p, bool copyPSP)
 	MUSINFOactor = p.MUSINFOactor;
 	MUSINFOtics = p.MUSINFOtics;
 	SoundClass = p.SoundClass;
+	angleOffsetTargets = p.angleOffsetTargets;
 	if (copyPSP)
 	{
 		// This needs to transfer ownership completely.
@@ -382,7 +394,7 @@ void player_t::SetLogNumber (int num)
 
 	// First look up TXT_LOGTEXT%d in the string table
 	mysnprintf(lumpname, countof(lumpname), "$TXT_LOGTEXT%d", num);
-	auto text = GStrings[lumpname+1];
+	auto text = GStrings.CheckString(lumpname+1);
 	if (text)
 	{
 		SetLogText(lumpname);	// set the label, not the content, so that a language change can be picked up.
@@ -400,7 +412,7 @@ void player_t::SetLogNumber (int num)
 			// If this is an original IWAD text, try looking up its lower priority string version first.
 
 			mysnprintf(lumpname, countof(lumpname), "$TXT_ILOG%d", num);
-			auto text = GStrings[lumpname + 1];
+			auto text = GStrings.CheckString(lumpname + 1);
 			if (text)
 			{
 				SetLogText(lumpname);	// set the label, not the content, so that a language change can be picked up.
@@ -428,7 +440,7 @@ void player_t::SetLogText (const char *text)
 	if (mo && mo->CheckLocalView())
 	{
 		// Print log text to console
-		Printf(PRINT_HIGH | PRINT_NONOTIFY, TEXTCOLOR_GOLD "%s\n", LogText[0] == '$' ? GStrings(text + 1) : text);
+		Printf(PRINT_HIGH | PRINT_NONOTIFY, TEXTCOLOR_GOLD "%s\n", LogText[0] == '$' ? GStrings.GetString(text + 1) : text);
 	}
 }
 
@@ -506,6 +518,23 @@ DEFINE_ACTION_FUNCTION(_PlayerInfo, SetFOV)
 	PARAM_FLOAT(fov);
 	self->SetFOV((float)fov);
 	return 0;
+}
+
+DEFINE_ACTION_FUNCTION(_PlayerInfo, SetSkin)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(player_t);
+	PARAM_INT(skinIndex);
+	if (skinIndex >= 0 && skinIndex < Skins.size())
+	{
+		// commented code - cvar_set calls this automatically, along with saving the skin selection.
+		//self->userinfo.SkinNumChanged(skinIndex);
+		cvar_set("skin", Skins[skinIndex].Name.GetChars());
+		ACTION_RETURN_INT(self->userinfo.GetSkin());
+	}
+	else
+	{
+		ACTION_RETURN_INT(-1);
+	}
 }
 
 //===========================================================================
@@ -721,7 +750,8 @@ DEFINE_ACTION_FUNCTION(_PlayerInfo, Resurrect)
 DEFINE_ACTION_FUNCTION(_PlayerInfo, GetUserName)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(player_t);
-	ACTION_RETURN_STRING(self->userinfo.GetName());
+	PARAM_UINT(charLimit);
+	ACTION_RETURN_STRING(self->userinfo.GetName(charLimit));
 }
 
 DEFINE_ACTION_FUNCTION(_PlayerInfo, GetNeverSwitch)
@@ -758,6 +788,12 @@ DEFINE_ACTION_FUNCTION(_PlayerInfo, GetSkin)
 {
 	PARAM_SELF_STRUCT_PROLOGUE(player_t);
 	ACTION_RETURN_INT(self->userinfo.GetSkin());
+}
+
+DEFINE_ACTION_FUNCTION(_PlayerInfo, GetSkinCount)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(player_t);
+	ACTION_RETURN_INT(Skins.size());
 }
 
 DEFINE_ACTION_FUNCTION(_PlayerInfo, GetGender)
@@ -1168,15 +1204,6 @@ DEFINE_ACTION_FUNCTION(APlayerPawn, CheckMusicChange)
 
 void P_CheckEnvironment(player_t *player)
 {
-	P_PlayerOnSpecial3DFloor(player);
-	P_PlayerInSpecialSector(player);
-
-	if (!player->mo->isAbove(player->mo->Sector->floorplane.ZatPoint(player->mo)) ||
-		player->mo->waterlevel)
-	{
-		// Player must be touching the floor
-		P_PlayerOnSpecialFlat(player, P_GetThingFloorType(player->mo));
-	}
 	if (player->mo->Vel.Z <= -player->mo->FloatVar(NAME_FallingScreamMinSpeed) &&
 		player->mo->Vel.Z >= -player->mo->FloatVar(NAME_FallingScreamMaxSpeed) && player->mo->alternative == nullptr &&
 		player->mo->waterlevel == 0)
@@ -1415,8 +1442,7 @@ void P_PredictPlayer (player_t *player)
 {
 	int maxtic;
 
-	if (cl_noprediction ||
-		singletics ||
+	if (singletics ||
 		demoplayback ||
 		player->mo == NULL ||
 		player != player->mo->Level->GetConsolePlayer() ||
@@ -1442,6 +1468,14 @@ void P_PredictPlayer (player_t *player)
 	PredictionActor = player->mo;
 	PredictionActorBackupArray.Resize(act->GetClass()->Size);
 	memcpy(PredictionActorBackupArray.Data(), &act->snext, act->GetClass()->Size - ((uint8_t *)&act->snext - (uint8_t *)act));
+
+	// Since this is a DObject it needs to have its fields backed up manually for restore, otherwise any changes
+	// to it will be permanent while predicting. This is now auto-created on pawns to prevent creation spam.
+	if (act->ViewPos != nullptr)
+	{
+		PredictionViewPosBackup.Pos = act->ViewPos->Offset;
+		PredictionViewPosBackup.Flags = act->ViewPos->Flags;
+	}
 
 	act->flags &= ~MF_PICKUP;
 	act->flags2 &= ~MF2_PUSHWALL;
@@ -1482,7 +1516,7 @@ void P_PredictPlayer (player_t *player)
 
 	// This essentially acts like a mini P_Ticker where only the stuff relevant to the client is actually
 	// called. Call order is preserved.
-	bool rubberband = false;
+	bool rubberband = false, rubberbandLimit = false;
 	DVector3 rubberbandPos = {};
 	const bool canRubberband = LastPredictedTic >= 0 && cl_rubberband_scale > 0.0f && cl_rubberband_scale < 1.0f;
 	const double rubberbandThreshold = max<float>(cl_rubberband_minmove, cl_rubberband_threshold);
@@ -1506,33 +1540,43 @@ void P_PredictPlayer (player_t *player)
 			{
 				rubberband = true;
 				rubberbandPos = player->mo->Pos();
+				rubberbandLimit = cl_rubberband_limit > 0.0f && dist > cl_rubberband_limit * cl_rubberband_limit;
 			}
 		}
 
+		player->oldbuttons = player->cmd.ucmd.buttons;
 		player->cmd = localcmds[i % LOCALCMDTICS];
 		player->mo->ClearInterpolation();
 		player->mo->ClearFOVInterpolation();
-		P_PlayerThink (player);
-		player->mo->Tick ();
+		P_PlayerThink(player);
+		player->mo->CallTick();
 	}
 
 	if (rubberband)
 	{
-		R_ClearInterpolationPath();
-		player->mo->renderflags &= ~RF_NOINTERPOLATEVIEW;
-
 		DPrintf(DMSG_NOTIFY, "Prediction mismatch at (%.3f, %.3f, %.3f)\nExpected: (%.3f, %.3f, %.3f)\nCorrecting to (%.3f, %.3f, %.3f)\n",
 			LastPredictedPosition.X, LastPredictedPosition.Y, LastPredictedPosition.Z,
 			rubberbandPos.X, rubberbandPos.Y, rubberbandPos.Z,
 			player->mo->X(), player->mo->Y(), player->mo->Z());
 
-		DVector3 snapPos = {};
-		P_LerpCalculate(player->mo, LastPredictedPosition, snapPos, cl_rubberband_scale, cl_rubberband_threshold, cl_rubberband_minmove);
-		player->mo->PrevPortalGroup = LastPredictedPortalGroup;
-		player->mo->Prev = LastPredictedPosition;
-		const double zOfs = player->viewz - player->mo->Z();
-		player->mo->SetXYZ(snapPos);
-		player->viewz = snapPos.Z + zOfs;
+		if (rubberbandLimit)
+		{
+			// If too far away, instantly snap the player's view to their correct position.
+			player->mo->renderflags |= RF_NOINTERPOLATEVIEW;
+		}
+		else
+		{
+			R_ClearInterpolationPath();
+			player->mo->renderflags &= ~RF_NOINTERPOLATEVIEW;
+
+			DVector3 snapPos = {};
+			P_LerpCalculate(player->mo, LastPredictedPosition, snapPos, cl_rubberband_scale, cl_rubberband_threshold, cl_rubberband_minmove);
+			player->mo->PrevPortalGroup = LastPredictedPortalGroup;
+			player->mo->Prev = LastPredictedPosition;
+			const double zOfs = player->viewz - player->mo->Z();
+			player->mo->SetXYZ(snapPos);
+			player->viewz = snapPos.Z + zOfs;
+		}
 	}
 
 	// This is intentionally done after rubberbanding starts since it'll automatically smooth itself towards
@@ -1579,6 +1623,12 @@ void P_UnPredictPlayer ()
 
 		act->UnlinkFromWorld(&ctx);
 		memcpy(&act->snext, PredictionActorBackupArray.Data(), PredictionActorBackupArray.Size() - ((uint8_t *)&act->snext - (uint8_t *)act));
+
+		if (act->ViewPos != nullptr)
+		{
+			act->ViewPos->Offset = PredictionViewPosBackup.Pos;
+			act->ViewPos->Flags = PredictionViewPosBackup.Flags;
+		}
 
 		// The blockmap ordering needs to remain unchanged, too.
 		// Restore sector links and refrences.

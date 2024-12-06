@@ -122,21 +122,12 @@
 #           cp gzdoom *.pk3 package
 #         fi
 
-<<<<<<< HEAD
 #     - name: Upload Package
 #       if: runner.os == 'Windows'  # Remove to store packages of all targets
 #       uses: actions/upload-artifact@v1
 #       with:
 #         path: build/package
 #         name: ${{ matrix.config.name }} ${{ matrix.config.build_type }}
-=======
-    - name: Upload Package
-      if: runner.os == 'Windows'  # Remove to store packages of all targets
-      uses: actions/upload-artifact@v3
-      with:
-        path: build/package
-        name: ${{ matrix.config.name }} ${{ matrix.config.build_type }}
->>>>>>> g4.11.0
 
 #     - name: List Build Directory
 #       if: always()

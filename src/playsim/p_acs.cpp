@@ -3248,7 +3248,7 @@ const char *FBehavior::LookupString (uint32_t index, bool forprint) const
 			token.Truncate(5);
 
 			FStringf label("TXT_ACS_%s_%d_%.5s", Level->MapName.GetChars(), index, token.GetChars());
-			auto p = GStrings[label.GetChars()];
+			auto p = GStrings.CheckString(label.GetChars());
 			if (p) return p;
 		}
 
@@ -5323,7 +5323,13 @@ int DLevelScript::SwapActorTeleFog(AActor *activator, int tid)
 }
 
 // Macro for CallFunction. Checks passed number of arguments with minimum required. Sets needCount and returns if not enough.
-#define MIN_ARG_COUNT(minCount) do { if (argCount < minCount) { needCount = minCount; return 0; } } while(0)
+#define MIN_ARG_COUNT(minCount) \
+	do { \
+		if (argCount < minCount && !(Level->i_compatflags2 & COMPATF2_NOACSARGCHECK)) { \
+			needCount = minCount; \
+			return 0; \
+		} \
+	} while(0)
 
 int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args, int &needCount)
 {
@@ -5500,7 +5506,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args, int &
 			else
 			{
 				FName p(Level->Behaviors.LookupString(args[0]));
-				auto armor = Level->Players[args[1]]->mo->FindInventory(NAME_BasicArmor);
+				auto armor = Level->Players[args[1]]->mo->FindInventory(NAME_BasicArmor, true);
 				if (armor && armor->NameVar(NAME_ArmorType) == p) return armor->IntVar(NAME_Amount);
 			}
 			return 0;
@@ -5511,7 +5517,7 @@ int DLevelScript::CallFunction(int argCount, int funcIndex, int32_t *args, int &
 		{
 			if (activator == NULL || activator->player == NULL) return 0;
 
-			auto equippedarmor = activator->FindInventory(NAME_BasicArmor);
+			auto equippedarmor = activator->FindInventory(NAME_BasicArmor, true);
 
 			if (equippedarmor && equippedarmor->IntVar(NAME_Amount) != 0)
 			{
@@ -8503,7 +8509,7 @@ scriptwait:
 			lookup = Level->Behaviors.LookupString (STACK(1), true);
 			if (pcd == PCD_PRINTLOCALIZED)
 			{
-				lookup = GStrings(lookup);
+				lookup = GStrings.GetString(lookup);
 			}
 			if (lookup != NULL)
 			{
@@ -8892,7 +8898,7 @@ scriptwait:
 		case PCD_PLAYERARMORPOINTS:
 			if (activator)
 			{
-				auto armor = activator->FindInventory(NAME_BasicArmor);
+				auto armor = activator->FindInventory(NAME_BasicArmor, true);
 				PushToStack (armor ? armor->IntVar(NAME_Amount) : 0);
 			}
 			else

@@ -172,6 +172,7 @@ IMPLEMENT_POINTERS_START(AActor)
 	IMPLEMENT_POINTER(target)
 	IMPLEMENT_POINTER(lastenemy)
 	IMPLEMENT_POINTER(tracer)
+	IMPLEMENT_POINTER(damagesource)
 	IMPLEMENT_POINTER(goal)
 	IMPLEMENT_POINTER(LastLookActor)
 	IMPLEMENT_POINTER(Inventory)
@@ -221,6 +222,7 @@ void AActor::Serialize(FSerializer &arc)
 		A("angles", Angles)
 		A("frame", frame)
 		A("scale", Scale)
+		A("nolocalrender", NoLocalRender) // Note: This will probably be removed later since a better solution is needed
 		A("renderstyle", RenderStyle)
 		A("renderflags", renderflags)
 		A("renderflags2", renderflags2)
@@ -293,6 +295,7 @@ void AActor::Serialize(FSerializer &arc)
 		A("inventoryid", InventoryID)
 		A("floatbobphase", FloatBobPhase)
 		A("floatbobstrength", FloatBobStrength)
+		A("floatbobfactor", FloatBobFactor)
 		A("translation", Translation)
 		A("bloodcolor", BloodColor)
 		A("bloodtranslation", BloodTranslation)
@@ -321,6 +324,7 @@ void AActor::Serialize(FSerializer &arc)
 		A("wallbouncefactor", wallbouncefactor)
 		A("bouncecount", bouncecount)
 		A("maxtargetrange", maxtargetrange)
+		A("missilechancemult", missilechancemult)
 		A("meleethreshold", meleethreshold)
 		A("meleerange", meleerange)
 		A("damagetype", DamageType)
@@ -402,7 +406,8 @@ void AActor::Serialize(FSerializer &arc)
 		("unmorphtime", UnmorphTime)
 		("morphflags", MorphFlags)
 		("premorphproperties", PremorphProperties)
-		("morphexitflash", MorphExitFlash);
+		("morphexitflash", MorphExitFlash)
+		("damagesource", damagesource);
 
 
 		SerializeTerrain(arc, "floorterrain", floorterrain, &def->floorterrain);
@@ -802,7 +807,7 @@ DEFINE_ACTION_FUNCTION(AActor, GiveInventoryType)
 
 void AActor::CopyFriendliness (AActor *other, bool changeTarget, bool resetHealth)
 {
-	Level->total_monsters -= CountsAsKill();
+	if (health > 0) Level->total_monsters -= CountsAsKill();
 	TIDtoHate = other->TIDtoHate;
 	LastLookActor = other->LastLookActor;
 	LastLookPlayerNumber = other->LastLookPlayerNumber;
@@ -817,7 +822,7 @@ void AActor::CopyFriendliness (AActor *other, bool changeTarget, bool resetHealt
 		LastHeard = target = other->target;
 	}	
 	if (resetHealth) health = SpawnHealth();	
-	Level->total_monsters += CountsAsKill();
+	if (health > 0) Level->total_monsters += CountsAsKill();
 }
 
 DEFINE_ACTION_FUNCTION(AActor, CopyFriendliness)
@@ -1447,7 +1452,7 @@ FSerializer &Serialize(FSerializer &arc, const char *key, AnimModelOverride &amo
 	return arc;
 }
 
-FSerializer &Serialize(FSerializer &arc, const char *key, struct AnimOverride &ao, struct AnimOverride *def)
+FSerializer &Serialize(FSerializer &arc, const char *key, struct ModelAnim &ao, struct ModelAnim *def)
 {
 	arc.BeginObject(key);
 	arc("firstFrame", ao.firstFrame);
@@ -1457,7 +1462,65 @@ FSerializer &Serialize(FSerializer &arc, const char *key, struct AnimOverride &a
 	arc("flags", ao.flags);
 	arc("framerate", ao.framerate);
 	arc("startTic", ao.startTic);
-	arc("switchTic", ao.switchTic);
+	arc("switchOffset", ao.switchOffset);
+	arc.EndObject();
+	return arc;
+}
+
+FSerializer &Serialize(FSerializer &arc, const char *key, ModelAnimFrame &ao, ModelAnimFrame *def)
+{
+	arc.BeginObject(key);
+	if(arc.isReading())
+	{
+		if(arc.HasKey("firstFrame"))
+		{ // legacy save, clear interpolation
+			ao = nullptr;
+		}
+		else
+		{
+			FString type = "nullptr";
+			arc("type", type);
+			if(type.Compare("nullptr") == 0)
+			{
+				ao = nullptr;
+			}
+			else if(type.Compare("interp") == 0)
+			{
+				ModelAnimFrameInterp tmp;
+				arc("inter", tmp.inter);
+				arc("frame1", tmp.frame1);
+				arc("frame2", tmp.frame2);
+				ao = tmp;
+			}
+			else if(type.Compare("precalcIQM") == 0)
+			{
+				//TODO, unreachable
+				ao = nullptr;
+			}
+		}
+	}
+	else // if(arc.isWriting())
+	{
+		if(std::holds_alternative<std::nullptr_t>(ao))
+		{
+			FString tmp = "nullptr";
+			arc("type", tmp);
+		}
+		else if(std::holds_alternative<ModelAnimFrameInterp>(ao))
+		{
+			FString type = "interp";
+			arc("type", type);
+			arc("inter", std::get<ModelAnimFrameInterp>(ao).inter);
+			arc("frame1", std::get<ModelAnimFrameInterp>(ao).frame1);
+			arc("frame2", std::get<ModelAnimFrameInterp>(ao).frame2);
+		}
+		else if(std::holds_alternative<ModelAnimFramePrecalculatedIQM>(ao))
+		{
+			//TODO
+			FString type = "nullptr";
+			arc("type", type);
+		}
+	}
 	arc.EndObject();
 	return arc;
 }
@@ -2815,15 +2878,18 @@ static void PlayerLandedMakeGruntSound(AActor* self, AActor *onmobj)
 	}
 }
 
+static void PlayerSquatView(AActor *self, AActor *onmobj)
+{
+	IFVIRTUALPTR(self, AActor, PlayerSquatView)
+	{
+		VMValue params[2] = { self, onmobj };
+		VMCall(func, params, 2, nullptr, 0);
+	}
+}
+
 static void PlayerLandedOnThing (AActor *mo, AActor *onmobj)
 {
-	if (!mo->player)
-		return;
-
-	if (mo->player->mo == mo)
-	{
-		mo->player->deltaviewheight = mo->Vel.Z / 8.;
-	}
+	PlayerSquatView(mo, onmobj);
 
 	if (mo->player->cheats & CF_PREDICTING)
 		return;
@@ -2938,7 +3004,7 @@ void AActor::CallFallAndSink(double grav, double oldfloorz)
 	}
 	else
 	{
-	FallAndSink(grav, oldfloorz);
+		FallAndSink(grav, oldfloorz);
 	}
 }
 
@@ -3814,8 +3880,11 @@ void AActor::Tick ()
 
 	// Check for Actor unmorphing, but only on the thing that is the morphed Actor.
 	// Players do their own special checking for this.
-	if (alternative != nullptr && !(flags & MF_UNMORPHED) && player == nullptr)
+	if (alternative != nullptr && player == nullptr)
 	{
+		if (flags & MF_UNMORPHED)
+			return;
+
 		int res = false;
 		IFVIRTUAL(AActor, CheckUnmorph)
 		{
@@ -3859,6 +3928,12 @@ void AActor::Tick ()
 			{
 				special2++;
 			}
+
+			if(flags9 & MF9_DECOUPLEDANIMATIONS && modelData && !(modelData->curAnim.flags & MODELANIM_NONE))
+			{
+				modelData->curAnim.startTic += 1;
+			}
+
 			return;
 		}
 
@@ -3906,6 +3981,12 @@ void AActor::Tick ()
 			{
 				special2++;
 			}
+
+			if(flags9 & MF9_DECOUPLEDANIMATIONS && modelData && !(modelData->curAnim.flags & MODELANIM_NONE))
+			{
+				modelData->curAnim.startTic += 1;
+			}
+
 			return;
 		}
 
@@ -4358,6 +4439,14 @@ void AActor::Tick ()
 		// must have been removed
 		if (ObjectFlags & OF_EuthanizeMe) return;
 	}
+	//[inkoalawetrust] Genericized level damage handling that makes sector, 3D floor, and TERRAIN flat damage affect monsters and other NPCs too.
+	if ((!(flags9 & MF9_NOSECTORDAMAGE) || flags9 & MF9_FORCESECTORDAMAGE) && (player || (player == nullptr && (Sector->MoreFlags & SECMF_HURTMONSTERS || flags9 & MF9_FORCESECTORDAMAGE))))
+	{
+		P_ActorOnSpecial3DFloor(this);
+		P_ActorInSpecialSector(this,Sector);
+		if (!isAbove(Sector->floorplane.ZatPoint(this)) || waterlevel) // Actor must be touching the floor for TERRAIN flats.
+			P_ActorOnSpecialFlat(this, P_GetThingFloorType(this));
+	}
 
 	if (tics != -1)
 	{
@@ -4602,6 +4691,23 @@ void AActor::SplashCheck()
 
 //==========================================================================
 //
+// AActor::PlayDiveOrSurfaceSounds
+//
+// Plays diving or surfacing sounds for the player
+//
+//==========================================================================
+
+void AActor::PlayDiveOrSurfaceSounds(int oldlevel)
+{
+	IFVIRTUAL(AActor, PlayDiveOrSurfaceSounds)
+	{
+		VMValue params[2] = { (DObject *)this, oldlevel };
+		VMCall(func, params, 2, nullptr, 0);
+	}
+}
+
+//==========================================================================
+//
 // AActor::UpdateWaterLevel
 //
 // Returns true if actor should splash
@@ -4623,21 +4729,7 @@ bool AActor::UpdateWaterLevel(bool dosplash)
 
 	if (player != nullptr)
 	{
-		if (oldlevel < 3 && waterlevel == 3)
-		{
-			// Our head just went under.
-			S_Sound(this, CHAN_VOICE, 0, "*dive", 1, ATTN_NORM);
-		}
-		else if (oldlevel == 3 && waterlevel < 3)
-		{
-			// Our head just came up.
-			if (player->air_finished > Level->maptime)
-			{
-				// We hadn't run out of air yet.
-				S_Sound(this, CHAN_VOICE, 0, "*surface", 1, ATTN_NORM);
-			}
-			// If we were running out of air, then ResetAirSupply() will play *gasp.
-		}
+		PlayDiveOrSurfaceSounds(oldlevel);
 	}
 
 	return false;	// we did the splash ourselves
@@ -5343,6 +5435,42 @@ int MorphPointerSubstitution(AActor* from, AActor* to)
 		return false;
 	}
 
+	// [MC] Had to move this here since ObtainInventory was also moved as well. Should be called
+	// before any transference of items since that's what was intended when introduced.
+	if (!from->alternative) // Morphing into
+	{
+		{
+			IFVIRTUALPTR(from, AActor, PreMorph)
+			{
+				VMValue params[] = { from, to, false };
+				VMCall(func, params, 3, nullptr, 0);
+			}
+		}
+		{
+			IFVIRTUALPTR(to, AActor, PreMorph)
+			{
+				VMValue params[] = { to, from, true };
+				VMCall(func, params, 3, nullptr, 0);
+			}
+		}
+	}
+	else // Unmorphing back
+	{
+		{
+			IFVIRTUALPTR(from, AActor, PreUnmorph)
+			{
+				VMValue params[] = { from, to, false };
+				VMCall(func, params, 3, nullptr, 0);
+			}
+		}
+		{
+			IFVIRTUALPTR(to, AActor, PreUnmorph)
+			{
+				VMValue params[] = { to, from, true };
+				VMCall(func, params, 3, nullptr, 0);
+			}
+		}
+	}
 	// Since the check is good, move the inventory items over. This should always be done when
 	// morphing to emulate Heretic/Hexen's behavior since those stored the inventory in their
 	// player structs.
@@ -5390,6 +5518,10 @@ int MorphPointerSubstitution(AActor* from, AActor* to)
 	{
 		to->player = from->player;
 		from->player = nullptr;
+
+		// Swap the new body into the right network slot if it's a client (this doesn't
+		// really matter for regular Actors since they grab any ID they can get anyway).
+		NetworkEntityManager::SetClientNetworkEntity(to, to->player - players);
 	}
 
 	if (from->alternative != nullptr)
@@ -5700,6 +5832,7 @@ AActor *FLevelLocals::SpawnMapThing (FMapThing *mthing, int position)
 	AActor *mobj;
 
 	bool spawnmulti = G_SkillProperty(SKILLP_SpawnMulti) || !!(dmflags2 & DF2_ALWAYS_SPAWN_MULTI);
+	bool spawnmulti_cooponly = G_SkillProperty(SKILLP_SpawnMultiCoopOnly);
 
 	if (mthing->EdNum == 0 || mthing->EdNum == -1)
 		return NULL;
@@ -5780,9 +5913,9 @@ AActor *FLevelLocals::SpawnMapThing (FMapThing *mthing, int position)
 		{
 			mask = MTF_COOPERATIVE;
 		}
-		else if (spawnmulti)
+		else if (spawnmulti || spawnmulti_cooponly)
 		{
-			mask = MTF_COOPERATIVE|MTF_SINGLE;
+			mask = spawnmulti_cooponly ? MTF_COOPERATIVE : (MTF_COOPERATIVE|MTF_SINGLE);
 		}
 		else
 		{
@@ -6160,8 +6293,14 @@ AActor *P_SpawnPuff (AActor *source, PClassActor *pufftype, const DVector3 &pos1
 	if ( puff && (puff->flags5 & MF5_PUFFGETSOWNER))
 		puff->target = source;
 	
+	// [AA] Track the source of the attack unconditionally in a separate field.
+	puff->damagesource = source;
+	
 	// Angle is the opposite of the hit direction (i.e. the puff faces the source.)
 	puff->Angles.Yaw = hitdir + DAngle::fromDeg(180);
+
+	// [AA] Mark the spawned actor as a puff with a flag.
+	puff->flags9 |= MF9_ISPUFF;
 
 	// If a puff has a crash state and an actor was not hit,
 	// it will enter the crash state. This is used by the StrifeSpark
@@ -7722,7 +7861,7 @@ const char *AActor::GetTag(const char *def) const
 		const char *tag = Tag->GetChars();
 		if (tag[0] == '$')
 		{
-			return GStrings(tag + 1);
+			return GStrings.GetString(tag + 1);
 		}
 		else
 		{
@@ -7752,7 +7891,7 @@ const char *AActor::GetCharacterName() const
 		const char *cname = Conversation->SpeakerName.GetChars();
 		if (cname[0] == '$')
 		{
-			return GStrings(cname + 1);
+			return GStrings.GetString(cname + 1);
 		}
 		else return cname;
 	}

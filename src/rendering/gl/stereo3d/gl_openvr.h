@@ -49,7 +49,7 @@ public:
 
 	OpenVREyePose(int eye, float shiftFactor, float scaleFactor);
 	virtual ~OpenVREyePose() override;
-	virtual VSMatrix GetProjection(FLOATTYPE fov, FLOATTYPE aspectRatio, FLOATTYPE fovRatio) const override;
+	virtual VSMatrix GetProjection(FLOATTYPE fov, FLOATTYPE aspectRatio, FLOATTYPE fovRatio, bool iso_ortho) const override;
 	DVector3 GetViewShift(FLOATTYPE yaw) const override;
 	virtual void AdjustHud() const override;
 	virtual void AdjustBlend(HWDrawInfo* di) const override;
