@@ -224,7 +224,12 @@ void HWSprite::DrawSprite(HWDrawInfo *di, FRenderState &state, bool translucent)
 		state.SetFog(0, 0);
 	}
 
-	int clampmode = nomipmap ? CLAMP_XY_NOMIP : CLAMP_XY;
+	int clampmode = CLAMP_XY;
+
+	if (texture && texture->isNoMipmap())
+	{
+		clampmode = CLAMP_XY_NOMIP;
+	}
 
 	uint32_t spritetype = actor? uint32_t(actor->renderflags & RF_SPRITETYPEMASK) : 0;
 	if (texture) state.SetMaterial(texture, UF_Sprite, (spritetype == RF_FACESPRITE) ? CTF_Expand : 0, clampmode, translation, OverrideShader);
@@ -786,8 +791,6 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 			return;
 	}
 
-	nomipmap = (thing->renderflags2 & RF2_NOMIPMAP);
-
 	// check renderrequired vs ~r_rendercaps, if anything matches we don't support that feature,
 	// check renderhidden vs r_rendercaps, if anything matches we do support that feature and should hide it.
 	if ((!r_debug_disable_vis_filter && !!(thing->RenderRequired & ~r_renderercaps)) ||
@@ -1038,7 +1041,7 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 
 		r.Scale(sprscale.X, isSpriteShadow ? sprscale.Y * 0.15 * thing->isoscaleY : sprscale.Y * thing->isoscaleY);
 
-		if ((thing->renderflags & RF_ROLLSPRITE) || (thing->renderflags2 & RF2_SQUAREPIXELS))
+		if (((thing->renderflags & RF_ROLLSPRITE) || (thing->renderflags2 & RF2_SQUAREPIXELS)) && !(thing->renderflags2 & RF2_STRETCHPIXELS))
 		{
 			double ps = di->Level->pixelstretch;
 			double mult = 1.0 / sqrt(ps); // shrink slightly
@@ -1420,7 +1423,6 @@ void HWSprite::ProcessParticle(HWDrawInfo *di, particle_t *particle, sector_t *s
 	actor = nullptr;
 	this->particle = particle;
 	fullbright = particle->flags & SPF_FULLBRIGHT;
-	nomipmap = particle->flags & SPF_NOMIPMAP;
 
 	if (di->isFullbrightScene()) 
 	{
@@ -1621,7 +1623,7 @@ void HWSprite::AdjustVisualThinker(HWDrawInfo* di, DVisualThinker* spr, sector_t
 	auto r = spi.GetSpriteRect();
 	r.Scale(spr->Scale.X, spr->Scale.Y);
 
-	if (spr->PT.flags & SPF_ROLL)
+	if ((spr->PT.flags & SPF_ROLL) && !(spr->PT.flags & SPF_STRETCHPIXELS))
 	{
 		double ps = di->Level->pixelstretch;
 		double mult = 1.0 / sqrt(ps); // shrink slightly
