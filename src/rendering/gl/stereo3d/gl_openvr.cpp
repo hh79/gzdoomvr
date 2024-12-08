@@ -1328,7 +1328,7 @@ namespace s3d
 				const auto& eye = mEyes[GLRenderer->mBuffers->CurrentEye()];
 
 				GLRenderer->mBuffers->BindCurrentFB();
-				glClearColor(0.3f, 0.1f, 0.1f, 1.0f); // draw a dark red universe
+				glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // draw a dark red universe
 				glClear(GL_COLOR_BUFFER_BIT);
 				if (eyeCount - eye_ix > 1)
 					GLRenderer->mBuffers->NextEye(eyeCount);
@@ -1450,9 +1450,9 @@ namespace s3d
 					player->mo->ThrustAngleOffset = nullAngle;
 				}
 				auto vel = player->mo->Vel;
-				player->mo->Vel = DVector3((DVector2(-openvr_dpos.x, openvr_dpos.z) * vr_vunits_per_meter).Rotated(openvr_to_doom_angle), 0);
+				player->mo->Vel = DVector3((DVector2(-openvr_dpos.x, openvr_dpos.z) *vr_vunits_per_meter).Rotated(openvr_to_doom_angle), 0);
 				bool wasOnGround = player->mo->Z() <= player->mo->floorz;
-				float oldZ = player->mo->Z();
+				double oldZ = player->mo->Z();
 				P_XYMovement(player->mo, DVector2(0, 0));
 
 				//if we were on the ground before offsetting, make sure we still are (this fixes not being able to move on lifts)

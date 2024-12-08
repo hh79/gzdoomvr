@@ -55,11 +55,9 @@ pad_start togglemap
 pad_back pause
 pad_a menu_main
 pad_b +use
-axis4plus +jump
-Axis4Minus crouch
 rtrigger +attack
 ltrigger +altattack
-lshoulder weapprev
+lshoulder +speed
 rshoulder weapnext
 dpadleft invprev
 dpadright invnext
