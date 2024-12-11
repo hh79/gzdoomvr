@@ -44,7 +44,7 @@
 #include "c_dispatch.h"
 #include "d_net.h"
 #include "g_game.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 #include "engineerrors.h"
 #include "filesystem.h"
 #include "p_local.h"

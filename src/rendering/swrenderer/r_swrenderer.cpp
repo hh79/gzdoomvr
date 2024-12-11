@@ -40,7 +40,7 @@
 #include "swrenderer/r_swcolormaps.h"
 #include "v_palette.h"
 #include "v_video.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 #include "r_swrenderer.h"
 #include "scene/r_opaque_pass.h"
 #include "scene/r_3dfloors.h"

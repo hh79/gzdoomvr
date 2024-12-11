@@ -57,7 +57,7 @@
 
 // Data.
 #include "m_misc.h"
-#include "common/textures/m_png.h"
+#include "m_png.h"
 
 #include "cmdlib.h"
 
