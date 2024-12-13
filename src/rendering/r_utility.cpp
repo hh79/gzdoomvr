@@ -111,7 +111,7 @@ CVARD (Bool, r_radarclipper, false, CVAR_ARCHIVE | CVAR_SERVERINFO | CVAR_CHEAT,
 CVARD (Bool, r_dithertransparency, false, CVAR_ARCHIVE | CVAR_SERVERINFO | CVAR_CHEAT, "Use dithered-transparency shading for actor-occluding level geometry")
 CVAR(Int, r_PlayerSprites3DMode, 1, CVAR_ARCHIVE);
 CVAR(Float, gl_fatItemWidth, 0.5f, CVAR_ARCHIVE);
-CUSTOM_CVAR(Float, r_quakeintensity, 1.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CUSTOM_CVAR(Float, r_quakeintensity, 0.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 {
 	if (self < 0.f) self = 0.f;
 	else if (self > 1.f) self = 1.f;
