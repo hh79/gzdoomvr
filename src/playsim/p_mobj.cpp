@@ -2406,7 +2406,7 @@ double P_XYMovement (AActor *mo, DVector2 scroll)
 		return Oldfloorz;
 	}
 
-	if (mo->Z() > mo->floorz && !(mo->flags2 & MF2_ONMOBJ) &&
+	if (mo->Z() > mo->floorz + 2 && !(mo->flags2 & MF2_ONMOBJ) &&
 		!mo->IsNoClip2() &&
 		(!(mo->flags2 & MF2_FLY) || !(mo->flags & MF_NOGRAVITY)) &&
 		!mo->waterlevel)
@@ -2590,7 +2590,7 @@ static void P_ZMovement (AActor *mo, double oldfloorz)
 				mo->AddZ(mo->FloatSpeed);
 		}
 	}
-	if (mo->player && (mo->flags & MF_NOGRAVITY) && (mo->Z() > mo->floorz))
+	if (mo->player && (mo->flags & MF_NOGRAVITY) && (mo->Z() > mo->floorz + 2))
 	{
 		FBaseCVar* const fViewBobCvar = G_GetUserCVar(int(mo->player - players),"FViewBob");
 		bool const fViewBob = fViewBobCvar->GetGenericRep(fViewBobCvar->GetRealType()).Bool;
@@ -2631,7 +2631,7 @@ static void P_ZMovement (AActor *mo, double oldfloorz)
 //
 // clip movement
 //
-	if (mo->Z() <= mo->floorz)
+	if (mo->Z() <= mo->floorz + 2)
 	{	// Hit the floor
 		if ((!mo->player || !(mo->player->cheats & CF_PREDICTING)) &&
 			mo->Sector->SecActTarget != NULL &&
@@ -2642,7 +2642,7 @@ static void P_ZMovement (AActor *mo, double oldfloorz)
 		P_CheckFor3DFloorHit(mo, mo->floorz, true);
 		// [RH] Need to recheck this because the sector action might have
 		// teleported the actor so it is no longer below the floor.
-		if (mo->Z() <= mo->floorz)
+		if (mo->Z() <= mo->floorz +2)
 		{
 			mo->BlockingFloor = mo->Sector;
 			if ((mo->flags & MF_MISSILE) && !(mo->flags & MF_NOCLIP))
@@ -2909,7 +2909,7 @@ static void PlayerLandedOnThing (AActor *mo, AActor *onmobj)
 
 void AActor::FallAndSink(double grav, double oldfloorz)
 {
-	if (Z() > floorz && !(flags & MF_NOGRAVITY))
+	if (Z() > floorz + 2 && !(flags & MF_NOGRAVITY))
 	{
 		double startvelz = Vel.Z;
 

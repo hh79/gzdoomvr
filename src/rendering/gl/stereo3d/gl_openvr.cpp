@@ -1451,7 +1451,7 @@ namespace s3d
 				}
 				auto vel = player->mo->Vel;
 				player->mo->Vel = DVector3((DVector2(-openvr_dpos.x, openvr_dpos.z) *vr_vunits_per_meter).Rotated(openvr_to_doom_angle), 0);
-				bool wasOnGround = player->mo->Z() <= player->mo->floorz;
+				bool wasOnGround = player->mo->Z() <= player->mo->floorz + 2;
 				double oldZ = player->mo->Z();
 				P_XYMovement(player->mo, DVector2(0, 0));
 
