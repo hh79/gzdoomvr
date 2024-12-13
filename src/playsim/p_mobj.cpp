@@ -7360,23 +7360,45 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 		}
 	}
 
-	if (z != ONFLOORZ && z != ONCEILINGZ)
+	DVector3 pos = source->Vec2OffsetZ(x, y, z);
+	if (pos.Z != ONFLOORZ && pos.Z != ONCEILINGZ)
 	{
 		// Doom spawns missiles 4 units lower than hitscan attacks for players.
-		z += source->Center() - source->Floorclip + source->AttackOffset(-4);
+		pos.Z += source->Center() - source->Floorclip + source->AttackOffset(-4);
 		// Do not fire beneath the floor.
-		if (z < source->floorz)
+		if (pos.Z < source->floorz)
 		{
-			z = source->floorz;
+			pos.Z = source->floorz;
 		}
 	}
-	DVector3 pos = source->Vec2OffsetZ(x, y, z);
+
 	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
 	{
 		pos = source->player->mo->AttackPos;
-		DVector3 dir = source->player->mo->AttackDir(source, an, pitch);
+		DVector3 dir = source->player->mo->AttackDir(source, angle, pitch);
+		DVector3 xoffsetDir = source->player->mo->AttackDir(source, source->Angles.Yaw, source->Angles.Pitch);
+		DVector3 yoffsetDir = source->player->mo->AttackDir(source, source->Angles.Yaw - DAngle::fromDeg(90.), source->Angles.Pitch);
+		DVector3 zoffsetDir = source->player->mo->AttackDir(source, source->Angles.Yaw, source->Angles.Pitch + DAngle::fromDeg(90.));
 		an = dir.Angle();
 		pitch = dir.Pitch();
+
+		pos += DVector3(
+			x * xoffsetDir.Angle().Cos() * xoffsetDir.Pitch().Cos(),
+			x * xoffsetDir.Angle().Sin() * xoffsetDir.Pitch().Cos(),
+			x * -xoffsetDir.Pitch().Sin()
+		);
+
+		pos += DVector3(
+			y * yoffsetDir.Angle().Cos() * yoffsetDir.Pitch().Cos(),
+			y * yoffsetDir.Angle().Sin() * yoffsetDir.Pitch().Cos(),
+			y * -yoffsetDir.Pitch().Sin()
+		);
+
+		pos += DVector3(
+			z * zoffsetDir.Pitch().Cos() * zoffsetDir.Angle().Cos(),
+			z * zoffsetDir.Pitch().Cos() * zoffsetDir.Angle().Sin(),
+			z * -zoffsetDir.Pitch().Sin()
+		);
 	}
 	AActor *MissileActor = Spawn (source->Level, type, pos, ALLOW_REPLACE);
 	if (pMissileActor) *pMissileActor = MissileActor;
