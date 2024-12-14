@@ -661,7 +661,7 @@ class PlayerPawn : Actor
 		player.viewz = pos.Z + player.viewheight + (bob * clamp(ViewBob, 0. , 1.5)); // [SP] Allow DECORATE changes to view bobbing speed.
 
 		if (Floorclip && player.playerstate != PST_DEAD
-			&& pos.Z <= floorz)
+			&& pos.Z <= floorz + 2)
 		{
 			player.viewz -= Floorclip;
 		}
@@ -691,7 +691,7 @@ class PlayerPawn : Actor
 		player.Uncrouch();
 		TickPSprites();
 
-		player.onground = (pos.Z <= floorz);
+		player.onground = (pos.Z <= floorz + 2);
 		if (self is "PlayerChunk")
 		{ // Flying bloody skull or flying ice chunk
 			player.viewheight = 6;
@@ -1294,7 +1294,7 @@ class PlayerPawn : Actor
 			Angle += cmd.yaw * (360./65536.);
 		}
 
-		player.onground = (pos.z <= floorz) || bOnMobj || bMBFBouncer || (player.cheats & CF_NOCLIP2);
+		player.onground = (pos.z <= floorz + 2) || bOnMobj || bMBFBouncer || (player.cheats & CF_NOCLIP2);
 
 		// killough 10/98:
 		//
