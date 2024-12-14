@@ -1217,35 +1217,59 @@ namespace s3d
 		//trigger (swaps with handedness)
 		int controller = openvr_rightHanded ? role : 1 - role;
 
-		if (CurrentMenu == nullptr) //the quit menu is cancelled by any normal keypress, so don't generate the fire while in menus 
+		if (CurrentMenu != nullptr && menuactive != MENU_Off && menuactive != MENU_WaitKey)
 		{
-			HandleVRAxis(lastState, newState, 1, 0, KEY_JOY4, KEY_JOY4, controller * (KEY_PAD_RTRIGGER - KEY_JOY4));
+			if (axisTrackpad != -1)
+			{
+				HandleUIVRAxes(lastState, newState, axisTrackpad, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
+			}
+			if (axisJoystick != -1)
+			{
+				HandleUIVRAxes(lastState, newState, axisJoystick, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
+			}
+
+			HandleUIVRButton(lastState, newState, openvr::vr::k_EButton_Axis1, GK_RETURN);
+			HandleUIVRButton(lastState, newState, openvr::vr::k_EButton_Grip, GK_BACK);
+			HandleUIVRButton(lastState, newState, openvr::vr::k_EButton_A, GK_BACK);
+			HandleUIVRButton(lastState, newState, openvr::vr::k_EButton_ApplicationMenu, GK_BACKSPACE);
 		}
-		HandleUIVRAxis(lastState, newState, 1, 0, GK_RETURN, GK_RETURN);
+		else {
 
-		//touchpad
-		if (axisTrackpad != -1)
-		{
-			HandleVRAxis(lastState, newState, axisTrackpad, 0, KEY_PAD_LTHUMB_LEFT, KEY_PAD_LTHUMB_RIGHT, role * (KEY_PAD_RTHUMB_LEFT - KEY_PAD_LTHUMB_LEFT));
-			HandleVRAxis(lastState, newState, axisTrackpad, 1, KEY_PAD_LTHUMB_DOWN, KEY_PAD_LTHUMB_UP, role * (KEY_PAD_RTHUMB_DOWN - KEY_PAD_LTHUMB_UP));
-			HandleUIVRAxes(lastState, newState, axisTrackpad, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
+			if (axisTrackpad != -1)
+			{
+				HandleVRAxis(lastState, newState, axisTrackpad, 0, KEY_PAD_LTHUMB_LEFT, KEY_PAD_LTHUMB_RIGHT, role * (KEY_PAD_RTHUMB_LEFT - KEY_PAD_LTHUMB_LEFT));
+				HandleVRAxis(lastState, newState, axisTrackpad, 1, KEY_PAD_LTHUMB_DOWN, KEY_PAD_LTHUMB_UP, role * (KEY_PAD_RTHUMB_DOWN - KEY_PAD_LTHUMB_DOWN));
+			}
+			if (axisJoystick != -1)
+			{
+				HandleVRAxis(lastState, newState, axisJoystick, 0, KEY_JOYAXIS1MINUS, KEY_JOYAXIS1PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
+				HandleVRAxis(lastState, newState, axisJoystick, 1, KEY_JOYAXIS2MINUS, KEY_JOYAXIS2PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
+			}
+
+			// k_EButton_Grip === k_EButton_IndexController_A
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Grip, KEY_PAD_LSHOULDER, role * (KEY_PAD_RSHOULDER - KEY_PAD_LSHOULDER));
+
+			// k_EButton_ApplicationMenu / k_EButton_IndexController_B
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_ApplicationMenu, KEY_PAD_BACK, role * (KEY_PAD_START - KEY_PAD_BACK));
+
+			// k_EButton_A
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_A, KEY_PAD_A, role * (KEY_PAD_B - KEY_PAD_A));
+
+			// k_EButton_Axis0 === k_EButton_SteamVR_Touchpad
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis0, KEY_PAD_LTHUMB, role * (KEY_PAD_RTHUMB - KEY_PAD_LTHUMB));
+
+			// k_EButton_Axis1 === k_EButton_SteamVR_Trigger
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis1, KEY_PAD_LTRIGGER, role * (KEY_PAD_RTRIGGER - KEY_PAD_LTRIGGER));
+
+			// k_EButton_Axis2 === SteamVR-binding "Right Axis 2 Press" (at least on Index Controller)
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis2, KEY_PAD_X, role * (KEY_PAD_Y - KEY_PAD_X));
+
+			// k_EButton_Axis3 (unknown if used by any controller at all)
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis3, KEY_JOY1, role * (KEY_JOY2 - KEY_JOY1));
+
+			// k_EButton_Axis4 (unknown if used by any controller at all)
+			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis4, KEY_JOY3, role * (KEY_JOY4 - KEY_JOY3));
 		}
-
-		//WMR joysticks
-		if (axisJoystick != -1)
-		{
-			HandleVRAxis(lastState, newState, axisJoystick, 0, KEY_JOYAXIS1MINUS, KEY_JOYAXIS1PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
-			HandleVRAxis(lastState, newState, axisJoystick, 1, KEY_JOYAXIS2MINUS, KEY_JOYAXIS2PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
-			HandleUIVRAxes(lastState, newState, axisJoystick, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
-		}
-
-		HandleVRButton(lastState, newState, openvr::vr::k_EButton_Grip, KEY_PAD_LSHOULDER, role * (KEY_PAD_RSHOULDER - KEY_PAD_LSHOULDER));
-		HandleUIVRButton(lastState, newState, openvr::vr::k_EButton_Grip, GK_BACK);
-		HandleVRButton(lastState, newState, openvr::vr::k_EButton_ApplicationMenu, KEY_PAD_START, role * (KEY_PAD_BACK - KEY_PAD_START));
-
-		//Extra controls for rift
-		HandleVRButton(lastState, newState, openvr::vr::k_EButton_A, KEY_PAD_A, role * (KEY_PAD_B - KEY_PAD_A));
-		HandleVRButton(lastState, newState, openvr::vr::k_EButton_SteamVR_Touchpad, KEY_PAD_X, role * (KEY_PAD_Y - KEY_PAD_X));
 
 		lastState = newState;
 	}
