@@ -3,7 +3,7 @@ This is a VR fork of GZDoom based on gz3doom http://rotatingpenguin.com/gz3doom/
 
 The build has been developed and tested on the Meta Quest using Virtual Desktop. However, it should also work with other VR setups that are compatible with the OpenVR API.
 
-This version enables OpenVR controller input customization, allowing you to define controls according to your preference. By default, one hand (right) is tracked for weapon handling. Additionally, I have included a modified weapon packs authored by Fishbiter.
+This version enables OpenVR controller input customization, allowing you to define controls according to your preference. By default, one hand (right) is tracked for weapon handling. Additionally, it includes modified weapon packs created by Fishbiter.
 
 ## Controller Info
 
@@ -11,7 +11,7 @@ This version enables OpenVR controller input customization, allowing you to defi
 Default controller bindings are provided and are similar to those used in QuestZDoom.
 
 ### Index Controllers
-To get the most out of your Index Controllers, choose the Community Binding "Index Controller Bindings" by gameflorist in SteamVR. It makes the maximum buttons available for binding in GZDoom.
+To fully utilize your Index Controllers, select the Community Binding 'Index Controller Bindings' by gameflorist in SteamVR. This configuration provides the maximum number of buttons available for binding in GZDoom.
 
 ## Mods
 There are some optional mods tested for using with this fork
