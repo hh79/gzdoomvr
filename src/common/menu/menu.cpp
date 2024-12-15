@@ -60,7 +60,7 @@ static ScaleOverrider *CurrentScaleOverrider;
 //
 // Todo: Move these elsewhere
 //
-CVAR (Int, m_showinputgrid, 0, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR (Int, m_showinputgrid, 1, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, m_blockcontrollers, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 CVAR (Float, snd_menuvolume, 0.6f, CVAR_ARCHIVE)
