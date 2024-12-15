@@ -51,8 +51,8 @@ del +lookdown
 end centerview
 
 // Xbox 360 / PS2 controllers
-pad_start togglemap
-pad_back pause
+pad_start +jump 
+pad_back togglemap
 pad_a menu_main
 pad_b +use
 rtrigger +attack
@@ -63,13 +63,14 @@ dpadleft invprev
 dpadright invnext
 dpaddown invuse
 dpadup togglemap
-lthumb crouch
+rthumb crouch
+lthumb invuse
+axis4plus invnext
+axis4minus invprev
 
 // Generic gamepad bindings
 joy1 +use
 joy4 +jump
-axis6plus +attack
-axis3plus +altattack
 joy5 weapprev
 joy6 weapnext
 pov1left invprev

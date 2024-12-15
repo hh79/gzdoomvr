@@ -1215,7 +1215,7 @@ namespace s3d
 		VRControllerState_t& lastState = controllers[role].lastState;
 
 		//trigger (swaps with handedness)
-		int controller = openvr_rightHanded ? role : 1 - role;
+		int controller = openvr_rightHanded ? role : 1 - role;		
 
 		if (CurrentMenu != nullptr && menuactive != MENU_Off && menuactive != MENU_WaitKey)
 		{
@@ -1225,6 +1225,9 @@ namespace s3d
 			}
 			if (axisJoystick != -1)
 			{
+				HandleVRAxis(lastState, newState, axisJoystick, 0, KEY_JOYAXIS1MINUS, KEY_JOYAXIS1PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
+				HandleVRAxis(lastState, newState, axisJoystick, 1, KEY_JOYAXIS2MINUS, KEY_JOYAXIS2PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
+
 				HandleUIVRAxes(lastState, newState, axisJoystick, GK_LEFT, GK_RIGHT, GK_DOWN, GK_UP);
 			}
 
@@ -1234,12 +1237,6 @@ namespace s3d
 			HandleUIVRButton(lastState, newState, openvr::vr::k_EButton_ApplicationMenu, GK_BACKSPACE);
 		}
 		else {
-
-			if (axisTrackpad != -1)
-			{
-				HandleVRAxis(lastState, newState, axisTrackpad, 0, KEY_PAD_LTHUMB_LEFT, KEY_PAD_LTHUMB_RIGHT, role * (KEY_PAD_RTHUMB_LEFT - KEY_PAD_LTHUMB_LEFT));
-				HandleVRAxis(lastState, newState, axisTrackpad, 1, KEY_PAD_LTHUMB_DOWN, KEY_PAD_LTHUMB_UP, role * (KEY_PAD_RTHUMB_DOWN - KEY_PAD_LTHUMB_DOWN));
-			}
 			if (axisJoystick != -1)
 			{
 				HandleVRAxis(lastState, newState, axisJoystick, 0, KEY_JOYAXIS1MINUS, KEY_JOYAXIS1PLUS, role * (KEY_JOYAXIS3PLUS - KEY_JOYAXIS1PLUS));
@@ -1262,13 +1259,8 @@ namespace s3d
 			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis1, KEY_PAD_LTRIGGER, role * (KEY_PAD_RTRIGGER - KEY_PAD_LTRIGGER));
 
 			// k_EButton_Axis2 === SteamVR-binding "Right Axis 2 Press" (at least on Index Controller)
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis2, KEY_PAD_X, role * (KEY_PAD_Y - KEY_PAD_X));
-
-			// k_EButton_Axis3 (unknown if used by any controller at all)
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis3, KEY_JOY1, role * (KEY_JOY2 - KEY_JOY1));
-
-			// k_EButton_Axis4 (unknown if used by any controller at all)
-			HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis4, KEY_JOY3, role * (KEY_JOY4 - KEY_JOY3));
+			//This is causing the issue where the left grip cannot be set in the menu, and the right grip is functioning as the jump action.
+			//HandleVRButton(lastState, newState, openvr::vr::k_EButton_Axis2, KEY_PAD_X, role * (KEY_PAD_Y - KEY_PAD_X));
 		}
 
 		lastState = newState;
