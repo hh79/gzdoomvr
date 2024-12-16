@@ -59,10 +59,3 @@ Please see license files for individual contributor licenses
 ### Licensed under the GPL v3
 ##### https://www.gnu.org/licenses/quick-guide-gplv3.en.html
 ---
-
-
-# Resources (GZDoom)
-- https://zdoom.org/ - Home Page
-- https://forum.zdoom.org/ - Forum
-- https://zdoom.org/wiki/ - Wiki
-- https://dsc.gg/zdoom - Discord Server
