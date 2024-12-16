@@ -1,5 +1,5 @@
 # GZDoomVR 
-This is a VR fork of GZDoom based on gz3doom http://rotatingpenguin.com/gz3doom/, OpenVR Doom https://github.com/Fishbiter/gz3doom, and QuestZDoom https://github.com/DrBeef/QuestZDoom.
+This is a VR fork of GZDoom based on gz3doom http://rotatingpenguin.com/gz3doom/, OpenVR Doom https://github.com/Fishbiter/gz3doom and QuestZDoom https://github.com/DrBeef/QuestZDoom.
 
 The build has been developed and tested on the Meta Quest using Virtual Desktop. However, it should also work with other VR setups that are compatible with the OpenVR API.
 
@@ -24,7 +24,7 @@ To fully utilize your Index Controllers, select the Community Binding 'Index Con
 * Right-Hand Controller - Weapon orientation
 * Right-Hand Trigger - Fire Weapon
 * Right-Hand Grip Button - Weapon change
-* Righ-Hand Thumbstick click - up/down Item change
+* Right-Hand Thumbstick - up/down Item change
 * Right-Hand Thumbstick click - Crouch
 
 * Left-Hand Controller - Direction of movement (or if configured settings HMD direction is used)

@@ -138,7 +138,6 @@ S_API uint32_t VR_GetInitToken();
 EXTERN_CVAR(Int, screenblocks);
 EXTERN_CVAR(Float, movebob);
 EXTERN_CVAR(Bool, gl_billboard_faces_camera);
-EXTERN_CVAR(Int, gl_multisample);
 EXTERN_CVAR(Float, vr_vunits_per_meter)
 EXTERN_CVAR(Float, vr_floor_offset)
 EXTERN_CVAR(Float, vr_ipd);
@@ -1325,8 +1324,6 @@ namespace s3d
 		if (doAdjustVrSettings) {
 			movebob = 0;
 			gl_billboard_faces_camera = true;
-			if (gl_multisample < 2)
-				gl_multisample = 4;
 		}
 
 		haptics->ProcessHaptics();
