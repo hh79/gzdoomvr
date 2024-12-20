@@ -1647,16 +1647,6 @@ public:
 
 	bool				hasmodel;
 
-	//For VR, override firing position
-	public:
-	bool OverrideAttackPosDir;
-	DVector3 AttackPos;
-	DAngle   AttackPitch;
-	DAngle   AttackAngle;
-	DAngle  AttackRoll;
-
-	DVector3 (*AttackDir)(AActor* actor, DAngle yaw, DAngle pitch);
-
 	void PlayerLandedMakeGruntSound(AActor* onmobj);
 };
 

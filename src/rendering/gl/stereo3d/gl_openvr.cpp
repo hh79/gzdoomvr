@@ -572,6 +572,18 @@ namespace s3d
 		return eulerAnglesFromQuatPitchRotate(quatFromMatrix(mat), pitch);
 	}
 
+	double normalizeAngle(double angle) {
+		// Reduce the angle to [0, 359]
+		angle = fmod(angle, 360.0);
+		// Force it to be the positive remainder
+		angle = fmod(angle + 360.0, 360.0);
+		// Normalize to the [-180, 180] range
+		if (angle > 180.0) {
+			angle -= 360.0;
+		}
+		return angle;
+	}
+
 	OpenVREyePose::OpenVREyePose(int eye, float shiftFactor, float scaleFactor)
 		: VREyeInfo(0.0f, 1.f)
 		, eye(eye)
@@ -1496,27 +1508,31 @@ namespace s3d
 			{
 				if (GetWeaponTransform(&mat))
 				{
-					player->mo->OverrideAttackPosDir = true;
+					player->OverrideAttackPosDir = true;
 
-					player->mo->AttackPos.X = mat[3][0];
-					player->mo->AttackPos.Y = mat[3][2];
-					player->mo->AttackPos.Z = mat[3][1];
+					player->AttackPos.X = mat[3][0];
+					player->AttackPos.Y = mat[3][2];
+					player->AttackPos.Z = mat[3][1];
 
-					player->mo->AttackAngle = r_viewpoint.Angles.Yaw - DAngle::fromDeg(90.);
-					player->mo->AttackPitch = -r_viewpoint.Angles.Pitch;
+					//player->AttackAngle = r_viewpoint.Angles.Yaw - DAngle::fromDeg(90.);
+					//player->AttackPitch = -r_viewpoint.Angles.Pitch;
 
-					player->mo->AttackDir = MapAttackDir;
+					player->AttackDir = MapAttackDir;
 
 					vec3_t weaponangles;
-					int hand = openvr_righthanded ? 1 : 0;
-					HmdVector3d_t eulerAngles = eulerAnglesFromMatrixPitchRotate(controllers[hand].pose.mDeviceToAbsoluteTracking, vr_weaponRotate * 2);
+					int hand = openvr_rightHanded ? 1 : 0;
+					HmdVector3d_t eulerAngles = eulerAnglesFromMatrix(controllers[hand].pose.mDeviceToAbsoluteTracking);
 					weaponangles[YAW] = RAD2DEG(eulerAngles.v[0]);
 					weaponangles[PITCH] = -RAD2DEG(eulerAngles.v[1]);
 					weaponangles[ROLL] = normalizeAngle(-RAD2DEG(eulerAngles.v[2]) + 180.);
 
-					player->mo->AttackPitch = DAngle::fromDeg(-weaponangles[PITCH]);
-					player->mo->AttackAngle = DAngle::fromDeg(-90 + getViewpointYaw() + (weaponangles[YAW]- playerYaw));
-					player->mo->AttackRoll = DAngle::fromDeg(weaponangles[ROLL]);
+					HmdVector3d_t hmdAngles = eulerAnglesFromMatrix(hmdPose);
+					double playerYaw = hmdAngles.v[0];
+					double doomYaw = r_viewpoint.camera->Angles.Yaw.Degrees();
+
+					player->AttackPitch = DAngle::fromDeg(-weaponangles[PITCH]);
+					player->AttackAngle = DAngle::fromDeg(-90 + doomYaw + (weaponangles[YAW]- playerYaw));
+					player->AttackRoll = DAngle::fromDeg(weaponangles[ROLL]);
 
 				}
 				if (GetHandTransform(openvr_rightHanded ? 0 : 1, &mat) && openvr_moveFollowsOffHand)

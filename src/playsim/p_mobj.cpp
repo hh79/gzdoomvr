@@ -7372,13 +7372,13 @@ AActor *P_SpawnPlayerMissile (AActor *source, double x, double y, double z,
 		}
 	}
 
-	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
+	if (source->player != NULL && source->player->OverrideAttackPosDir)
 	{
-		pos = source->player->mo->AttackPos;
-		DVector3 dir = source->player->mo->AttackDir(source, angle, pitch);
-		DVector3 xoffsetDir = source->player->mo->AttackDir(source, source->Angles.Yaw, source->Angles.Pitch);
-		DVector3 yoffsetDir = source->player->mo->AttackDir(source, source->Angles.Yaw - DAngle::fromDeg(90.), source->Angles.Pitch);
-		DVector3 zoffsetDir = source->player->mo->AttackDir(source, source->Angles.Yaw, source->Angles.Pitch + DAngle::fromDeg(90.));
+		pos = source->player->AttackPos;
+		DVector3 dir = source->player->AttackDir(source, angle, pitch);
+		DVector3 xoffsetDir = source->player->AttackDir(source, source->Angles.Yaw, source->Angles.Pitch);
+		DVector3 yoffsetDir = source->player->AttackDir(source, source->Angles.Yaw - DAngle::fromDeg(90.), source->Angles.Pitch);
+		DVector3 zoffsetDir = source->player->AttackDir(source, source->Angles.Yaw, source->Angles.Pitch + DAngle::fromDeg(90.));
 		an = dir.Angle();
 		pitch = dir.Pitch();
 

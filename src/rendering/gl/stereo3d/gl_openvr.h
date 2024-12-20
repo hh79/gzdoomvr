@@ -39,6 +39,13 @@ namespace openvr {
 	struct VR_IVRRenderModels_FnTable;
 }
 
+#define PITCH 0
+#define YAW 1
+#define ROLL 2
+
+typedef float vec_t;
+typedef vec_t vec3_t[3];
+
 /* stereoscopic 3D API */
 namespace s3d {
 

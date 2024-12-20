@@ -476,6 +476,15 @@ public:
 
 	// Scaled angle adjustment info. Not for direct manipulation.
 	DRotator angleOffsetTargets;
+
+	//For VR, override firing position
+	bool OverrideAttackPosDir;
+	DVector3 AttackPos;
+	DAngle   AttackPitch;
+	DAngle   AttackAngle;
+	DAngle  AttackRoll;
+
+	DVector3 (*AttackDir)(AActor* actor, DAngle yaw, DAngle pitch);
 };
 
 // Bookkeeping on players - state.
