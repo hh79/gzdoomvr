@@ -1514,9 +1514,7 @@ namespace s3d
 					player->AttackPos.Y = mat[3][2];
 					player->AttackPos.Z = mat[3][1];
 
-					//player->AttackAngle = r_viewpoint.Angles.Yaw - DAngle::fromDeg(90.);
-					//player->AttackPitch = -r_viewpoint.Angles.Pitch;
-
+					
 					player->AttackDir = MapAttackDir;
 
 					vec3_t weaponangles;

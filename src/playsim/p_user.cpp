@@ -1923,10 +1923,10 @@ DEFINE_FIELD(FPlayerClass, Skins)
 DEFINE_ACTION_FUNCTION(_PlayerInfo, AttackDir)
 {
 	PARAM_SELF_PROLOGUE(player_t);
-	PARAM_OBJECT_NOT_NULL(source, player_t);
+	PARAM_OBJECT_NOT_NULL(source, AActor);
 	PARAM_ANGLE(yaw);
 	PARAM_ANGLE(pitch);
-	DVector3 dir = self->AttackDir(source->mo, yaw, pitch);
+	DVector3 dir = self->AttackDir(source, yaw, pitch);
 	ACTION_RETURN_VEC3(DVector3(dir.Angle().Degrees(), dir.Pitch().Degrees(), 0.));
 }
 
