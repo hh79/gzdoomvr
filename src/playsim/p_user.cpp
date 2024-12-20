@@ -1810,9 +1810,9 @@ bool P_IsPlayerTotallyFrozen(const player_t *player)
 // native members
 //
 //==========================================================================
-DEFINE_FIELD(AActor, OverrideAttackPosDir);
-DEFINE_FIELD(AActor, AttackPos);
-DEFINE_FIELD(AActor, AttackDir);
+//DEFINE_FIELD(AActor, OverrideAttackPosDir);
+//DEFINE_FIELD(AActor, AttackPos);
+//DEFINE_FIELD(AActor, AttackDir);
 
 DEFINE_FIELD_X(PlayerInfo, player_t, mo)
 DEFINE_FIELD_X(PlayerInfo, player_t, playerstate)

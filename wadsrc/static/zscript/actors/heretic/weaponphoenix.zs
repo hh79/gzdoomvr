@@ -148,12 +148,43 @@ class PhoenixRodPowered : PhoenixRod
 		double yo = Random2[FirePhoenixPL2]() / 128.;
 		Vector3 spawnpos = Vec3Offset(xo, yo, 26 + slope - Floorclip);
 
-		slope += 0.1;
+		let velxy = Vel.XY;
+		let directionAngle = angle;
+		let directionPitch = pitch;
+		let directionRoll = roll;
+		if (player.mo.OverrideAttackPosDir)
+		{
+			Vector3 dir;
+			Vector3 yoffsetDir;
+			spawnpos = player.mo.AttackPos;
+			directionRoll = -player.mo.AttackRoll;
+			dir = player.mo.AttackDir(self, angle, pitch);
+			yoffsetDir = player.mo.AttackDir(self, angle - 90, pitch);
+			directionAngle = dir.x;
+			directionPitch = dir.y;
+			spawnpos += (
+				xo * cos(dir.x) * cos(dir.y),
+				xo * sin(dir.x) * cos(dir.y),
+				xo * -sin(dir.y)
+			);
+			spawnpos += (
+				yo * cos(yoffsetDir.x) * cos(yoffsetDir.y),
+				yo * sin(yoffsetDir.x) * cos(yoffsetDir.y),
+				yo * -sin(yoffsetDir.y)
+			);
+			slope = -clamp(tan(directionPitch), -5, 5);
+		} 
+		else 
+		{
+			slope += 0.1;
+		}
+
 		Actor mo = Spawn("PhoenixFX2", spawnpos, ALLOW_REPLACE);
 		if (mo != null)
 		{
 			mo.target = self;
-			mo.Angle = Angle;
+			mo.Angle = directionAngle;
+			mo.Roll = directionRoll;
 			mo.VelFromAngle();
 			mo.Vel.XY += Vel.XY;
 			mo.Vel.Z = mo.Speed * slope;
