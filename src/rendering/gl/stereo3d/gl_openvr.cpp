@@ -1403,7 +1403,7 @@ namespace s3d
 				const auto& eye = mEyes[GLRenderer->mBuffers->CurrentEye()];
 
 				GLRenderer->mBuffers->BindCurrentFB();
-				glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // draw a dark red universe
+				glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // draw a dark black universe
 				glClear(GL_COLOR_BUFFER_BIT);
 				if (eyeCount - eye_ix > 1)
 					GLRenderer->mBuffers->NextEye(eyeCount);
@@ -1525,11 +1525,14 @@ namespace s3d
 					weaponangles[ROLL] = normalizeAngle(-RAD2DEG(eulerAngles.v[2]) + 180.);
 
 					HmdVector3d_t hmdAngles = eulerAnglesFromMatrix(hmdPose);
-					double playerYaw = hmdAngles.v[0];
+					double cameraYaw = RAD2DEG(hmdAngles.v[0]);
 					double doomYaw = r_viewpoint.camera->Angles.Yaw.Degrees();
 
+					//r_viewpoint.camera->Angles.Yaw = DAngle::fromDeg(cameraYaw);
+					player->ViewYawn = DAngle::fromDeg(90 + cameraYaw);
+
 					player->AttackPitch = DAngle::fromDeg(-weaponangles[PITCH]);
-					player->AttackAngle = DAngle::fromDeg(-90 + doomYaw + (weaponangles[YAW]- playerYaw));
+					player->AttackAngle = DAngle::fromDeg(-90 + doomYaw + (weaponangles[YAW]- cameraYaw));
 					player->AttackRoll = DAngle::fromDeg(weaponangles[ROLL]);
 
 				}

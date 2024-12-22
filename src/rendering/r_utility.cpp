@@ -490,7 +490,12 @@ void R_InterpolateView(FRenderViewpoint& viewPoint, const player_t* const player
 	const auto viewLvl = viewPoint.ViewLevel;
 
 	DAngle prevYaw = iView->Old.Angles.Yaw;
-	DAngle curYaw = iView->New.Angles.Yaw;
+	//DAngle curYaw = iView->New.Angles.Yaw;
+	DAngle curYaw = gamestate == GS_LEVEL && menuactive == MENU_Off && !paused ?
+		iView->New.Angles.Yaw :
+		viewPoint.Angles.Yaw;
+	//DAngle curYaw = player->ViewYawn;
+
 	if (!cl_capfps)
 	{
 		if ((iView->Old.Pos.X != iView->New.Pos.X || iView->Old.Pos.Y != iView->New.Pos.Y) && InterpolationPath.Size() > 0)

@@ -1922,7 +1922,7 @@ DEFINE_FIELD(FPlayerClass, Skins)
 
 DEFINE_ACTION_FUNCTION(_PlayerInfo, AttackDir)
 {
-	PARAM_SELF_PROLOGUE(player_t);
+	PARAM_SELF_STRUCT_PROLOGUE(player_t);
 	PARAM_OBJECT_NOT_NULL(source, AActor);
 	PARAM_ANGLE(yaw);
 	PARAM_ANGLE(pitch);

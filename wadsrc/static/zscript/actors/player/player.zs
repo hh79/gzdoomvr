@@ -731,7 +731,7 @@ class PlayerPawn : Actor
 		}
 		player.mo.CalcHeight ();
 			
-		if (player.attacker && player.attacker != self)
+		if (false && player.attacker && player.attacker != self)
 		{ // Watch killer
 			double diff = deltaangle(angle, AngleTo(player.attacker));
 			double delta = abs(diff);
@@ -1073,7 +1073,7 @@ class PlayerPawn : Actor
 			cmd.roll = 0;
 			cmd.forwardmove = 0;
 			cmd.sidemove = 0;
-			cmd.upmove = 0;
+			/cmd.upmove = 0;
 			player.turnticks = 0;
 		}
 		else if (player.cheats & CF_FROZEN)

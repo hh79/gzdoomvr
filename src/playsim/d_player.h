@@ -483,6 +483,7 @@ public:
 	DAngle   AttackPitch;
 	DAngle   AttackAngle;
 	DAngle  AttackRoll;
+	DAngle ViewYawn;
 
 	DVector3 (*AttackDir)(AActor* actor, DAngle yaw, DAngle pitch);
 };
