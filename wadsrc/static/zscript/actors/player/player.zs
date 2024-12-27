@@ -731,6 +731,7 @@ class PlayerPawn : Actor
 		}
 		player.mo.CalcHeight ();
 			
+		// Disable for VR mode, player camera should always follow HMD
 		if (false && player.attacker && player.attacker != self)
 		{ // Watch killer
 			double diff = deltaangle(angle, AngleTo(player.attacker));
@@ -1073,7 +1074,7 @@ class PlayerPawn : Actor
 			cmd.roll = 0;
 			cmd.forwardmove = 0;
 			cmd.sidemove = 0;
-			/cmd.upmove = 0;
+			cmd.upmove = 0;
 			player.turnticks = 0;
 		}
 		else if (player.cheats & CF_FROZEN)
@@ -1636,6 +1637,23 @@ class PlayerPawn : Actor
 	//
 	//----------------------------------------------------------------------------
 	
+	virtual void PausedThink()
+	{
+		//In VR mode, the yaw is controlled by the HMD. 
+		UserCmd cmd = player.cmd;
+
+		// [RH] 180-degree turn overrides all other yaws
+		if (player.turnticks)
+		{
+			player.turnticks--;
+			Angle += (180. / TURN180_TICKS);
+		}
+		else
+		{
+			Angle += cmd.yaw * (360./65536.);
+		}
+	}
+
 	virtual void PlayerThink()
 	{
 		let player = self.player;
@@ -1671,7 +1689,8 @@ class PlayerPawn : Actor
 
 		if (player.playerstate == PST_DEAD)
 		{
-			DeathThink ();
+			PausedThink();
+			DeathThink();
 			return;
 		}
 		if (player.jumpTics != 0)
@@ -2849,11 +2868,6 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native @WeaponSlots weapons;
 	native @UserCmd cmd;
 	native readonly @UserCmd original_cmd;
-	native readonly vector3 AttackPos;
-	native readonly double AttackPitch;
-	native readonly double AttackRoll;
-	native readonly double AttackAngle;
-	native readonly bool OverrideAttackPosDir;
 
 	native bool PoisonPlayer(Actor poisoner, Actor source, int poison);
 	native void PoisonDamage(Actor source, int damage, bool playPainSound);
@@ -2888,8 +2902,6 @@ struct PlayerInfo native play	// self is what internally is known as player_t
 	native clearscope bool GetClassicFlight() const;
 	native void SendPitchLimits();
 	native clearscope bool HasWeaponsInSlot(int slot) const;
-
-	native vector3 AttackDir(Actor actor, double angle, double pitch);
 
 	// The actual implementation is on PlayerPawn where it can be overridden. Use that directly in the future.
 	deprecated("3.7", "MorphPlayer() should be used on a PlayerPawn object") bool MorphPlayer(PlayerInfo activator, class<PlayerPawn> spawnType, int duration, EMorphFlags style, class<Actor> enterFlash = "TeleportFog", class<Actor> exitFlash = "TeleportFog")

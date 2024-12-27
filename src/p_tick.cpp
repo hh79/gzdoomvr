@@ -109,7 +109,19 @@ void P_Ticker (void)
 					ac->SetDynamicLights();
 				}
 			}
+
+			for (i = 0; i < MAXPLAYERS; i++)
+				if (Level->PlayerInGame(i))
+				{
+					auto player = Level->Players[i]->mo;
+					IFVIRTUALPTRNAME(player, NAME_PlayerPawn, PausedThink)
+					{
+						VMValue param = player;
+						VMCall(func, &param, 1, nullptr, 0);
+					}
+				}
 		}
+
 		return;
 	}
 
