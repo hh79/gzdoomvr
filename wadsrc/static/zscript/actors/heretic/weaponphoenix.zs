@@ -152,12 +152,12 @@ class PhoenixRodPowered : PhoenixRod
 		let directionAngle = angle;
 		let directionPitch = pitch;
 		let directionRoll = roll;
-		if (player.OverrideAttackPosDir)
+		if (player.mo.OverrideAttackPosDir)
 		{
 			Vector3 dir;
 			Vector3 yoffsetDir;
-			spawnpos = player.AttackPos;
-			directionRoll = -player.AttackRoll;
+			spawnpos = player.mo.AttackPos;
+			directionRoll = -player.mo.AttackRoll;
 			dir = player.mo.AttackDir(self, angle, pitch);
 			yoffsetDir = player.mo.AttackDir(self, angle - 90, pitch);
 			directionAngle = dir.x;
