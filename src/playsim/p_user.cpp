@@ -1901,12 +1901,6 @@ DEFINE_FIELD_X(PlayerInfo, player_t, userinfo)
 DEFINE_FIELD_X(PlayerInfo, player_t, weapons)
 DEFINE_FIELD_NAMED_X(PlayerInfo, player_t, cmd.ucmd.buttons, buttons)
 DEFINE_FIELD_X(PlayerInfo, player_t, SoundClass)
-DEFINE_FIELD_X(PlayerInfo, player_t, OverrideAttackPosDir)
-DEFINE_FIELD_X(PlayerInfo, player_t, AttackPos)
-DEFINE_FIELD_X(PlayerInfo, player_t, AttackDir)
-DEFINE_FIELD_X(PlayerInfo, player_t, AttackPitch)
-DEFINE_FIELD_X(PlayerInfo, player_t, AttackRoll)
-DEFINE_FIELD_X(PlayerInfo, player_t, AttackAngle)
 
 DEFINE_FIELD_X(UserCmd, usercmd_t, buttons)
 DEFINE_FIELD_X(UserCmd, usercmd_t, pitch)
@@ -1920,13 +1914,4 @@ DEFINE_FIELD(FPlayerClass, Type)
 DEFINE_FIELD(FPlayerClass, Flags)
 DEFINE_FIELD(FPlayerClass, Skins)
 
-DEFINE_ACTION_FUNCTION(_PlayerInfo, AttackDir)
-{
-	PARAM_SELF_STRUCT_PROLOGUE(player_t);
-	PARAM_OBJECT_NOT_NULL(source, AActor);
-	PARAM_ANGLE(yaw);
-	PARAM_ANGLE(pitch);
-	DVector3 dir = self->AttackDir(source, yaw, pitch);
-	ACTION_RETURN_VEC3(DVector3(dir.Angle().Degrees(), dir.Pitch().Degrees(), 0.));
-}
 

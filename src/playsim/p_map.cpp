@@ -4674,10 +4674,10 @@ AActor *P_LineAttack(AActor *t1, DAngle angle, double distance,
 		shootz = t1->Z();
 	shootz += sz;
 
-	if (t1->player != NULL && t1->player->OverrideAttackPosDir)
+	if (t1->player != NULL && t1->player->mo->OverrideAttackPosDir)
 	{
-		fromPos = t1->player->AttackPos;
-		direction = t1->player->AttackDir(t1, angle, pitch);
+		fromPos = t1->player->mo->AttackPos;
+		direction = t1->player->mo->AttackDir(t1, angle, pitch);
 	}
 	else
 	{
@@ -5436,10 +5436,10 @@ void P_RailAttack(FRailParams *p)
 		puffflags |= PF_NORANDOMZ;
 	}
 
-	if (source->player != NULL && source->player->OverrideAttackPosDir)
+	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
 	{
-		start = source->player->AttackPos;
-		direction = source->player->AttackDir(source, angle, pitch);
+		start = source->player->mo->AttackPos;
+		direction = source->player->mo->AttackDir(source, angle, pitch);
 	}
 	else
 	{

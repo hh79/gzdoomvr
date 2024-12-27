@@ -867,6 +867,13 @@ class Actor : Thinker native
 	native bool BouncePlane(readonly<SecPlane> plane);
 	native void PlayBounceSound(bool onFloor);
 	native bool ReflectOffActor(Actor blocking);
+	native readonly vector3 AttackPos;
+	native readonly double AttackPitch;
+	native readonly double AttackRoll;
+	native readonly double AttackAngle;
+	native readonly bool OverrideAttackPosDir;
+
+	native vector3 AttackDir(Actor actor, double angle, double pitch);
 
 	clearscope double PitchTo(Actor target, double zOfs = 0, double targZOfs = 0, bool absolute = false) const
 	{

@@ -1508,14 +1508,14 @@ namespace s3d
 			{
 				if (GetWeaponTransform(&mat))
 				{
-					player->OverrideAttackPosDir = true;
+					player->mo->OverrideAttackPosDir = true;
 
-					player->AttackPos.X = mat[3][0];
-					player->AttackPos.Y = mat[3][2];
-					player->AttackPos.Z = mat[3][1];
+					player->mo->AttackPos.X = mat[3][0];
+					player->mo->AttackPos.Y = mat[3][2];
+					player->mo->AttackPos.Z = mat[3][1];
 
 					
-					player->AttackDir = MapAttackDir;
+					player->mo->AttackDir = MapAttackDir;
 
 					vec3_t weaponangles;
 					int hand = openvr_rightHanded ? 1 : 0;
@@ -1527,13 +1527,9 @@ namespace s3d
 					HmdVector3d_t hmdAngles = eulerAnglesFromMatrix(hmdPose);
 					double cameraYaw = RAD2DEG(hmdAngles.v[0]);
 					double doomYaw = r_viewpoint.camera->Angles.Yaw.Degrees();
-
-					//r_viewpoint.camera->Angles.Yaw = DAngle::fromDeg(cameraYaw);
-					player->ViewYawn = DAngle::fromDeg(90 + cameraYaw);
-
-					player->AttackPitch = DAngle::fromDeg(-weaponangles[PITCH]);
-					player->AttackAngle = DAngle::fromDeg(-90 + doomYaw + (weaponangles[YAW]- cameraYaw));
-					player->AttackRoll = DAngle::fromDeg(weaponangles[ROLL]);
+					player->mo->AttackPitch = DAngle::fromDeg(-weaponangles[PITCH]);
+					player->mo->AttackAngle = DAngle::fromDeg(-90 + doomYaw + (weaponangles[YAW]- cameraYaw));
+					player->mo->AttackRoll = DAngle::fromDeg(weaponangles[ROLL]);
 
 				}
 				if (GetHandTransform(openvr_rightHanded ? 0 : 1, &mat) && openvr_moveFollowsOffHand)
