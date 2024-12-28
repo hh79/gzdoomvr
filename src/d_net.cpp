@@ -72,6 +72,7 @@
 #include "d_main.h"
 #include "i_interface.h"
 #include "savegamemanager.h"
+#include <hw_vrmodes.h>
 
 EXTERN_CVAR (Int, disableautosave)
 EXTERN_CVAR (Int, autosavecount)
@@ -1877,11 +1878,14 @@ void TryRunTics (void)
 	int 		numplaying;
 
 	bool doWait = (cl_capfps || pauseext || (r_NoInterpolate && !M_IsAnimated()));
+	auto vrmode = VRMode::GetVRMode();
 
 	// get real tics
 	if (doWait)
 	{
-		entertic = I_WaitForTic (oldentertics);
+		entertic = vrmode->IsVR() ? 
+			I_GetTime() :
+			I_WaitForTic (oldentertics);
 	}
 	else
 	{
@@ -1926,7 +1930,7 @@ void TryRunTics (void)
 		counts = availabletics;
 	
 	// Uncapped framerate needs seprate checks
-	if (counts == 0 && !doWait)
+	if (counts == 0 && (!doWait || vrmode->IsVR()))
 	{
 		TicStabilityWait();
 

@@ -458,16 +458,18 @@ void R_Shutdown ()
 
 bool P_NoInterpolation(player_t const *player, AActor const *actor)
 {
+	auto vrmode = VRMode::GetVRMode();
+
 	return player != nullptr
 		&& !(player->cheats & CF_INTERPVIEW)
 		&& player - players == consoleplayer
 		&& actor == player->mo
 		&& !demoplayback
 		&& !(player->cheats & (CF_TOTALLYFROZEN | CF_FROZEN))
-		&& player->playerstate == PST_LIVE
+		&& (player->playerstate == PST_LIVE || vrmode->IsVR())
 		&& player->mo->reactiontime == 0
 		&& !NoInterpolateView
-		&& !paused
+		&& (!paused || vrmode->IsVR())
 		&& !LocalKeyboardTurner;
 }
 
