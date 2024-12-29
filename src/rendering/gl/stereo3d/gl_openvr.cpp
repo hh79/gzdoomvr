@@ -144,6 +144,7 @@ EXTERN_CVAR(Float, vr_ipd);
 
 EXTERN_CVAR(Bool, openvr_rightHanded)
 EXTERN_CVAR(Bool, openvr_moveFollowsOffHand)
+EXTERN_CVAR(Bool, vr_enable_snapTurn);
 EXTERN_CVAR(Bool, openvr_drawControllers)
 EXTERN_CVAR(Float, openvr_weaponRotate);
 EXTERN_CVAR(Float, openvr_weaponScale);
@@ -1569,7 +1570,16 @@ namespace s3d
 		unsigned int delta = time - lastTime;
 		lastTime = time;
 
-		G_AddViewAngle(joyint(-1280 * I_OpenVRGetYaw() * delta * 30 / 1000), true, false);
+		int yaw = -1280 * I_OpenVRGetYaw() * delta * 30 / 1000;
+
+		if (!vr_enable_snapTurn)
+		{
+			G_AddViewAngle(yaw, true);
+		}
+		else
+		{
+			G_AddViewAngleSnap(yaw, true);
+		}
 	}
 
 	/* virtual */

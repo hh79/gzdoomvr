@@ -2748,9 +2748,9 @@ OptionMenu "OpenVROptions" protected
 {
 	Title "$VRPREFMNU" 
 	Option "$VRPREFMNU_HANDED", 				openvr_rightHanded,						"LeftRight"
+	Option "$VRPREFMNU_MOVEFOLLOW", 			openvr_moveFollowsOffHand,				"HeadHand"
 	Option "$VRPREFMNU_ENABLESNAPTURN", 		vr_enable_snapTurn,						"OnOff"
 	Slider "$VRPREFMNU_SNAPANGLE", 				vr_snapAngle,							15, 90, 15, 0
-	Option "$VRPREFMNU_MOVEFOLLOW", 			openvr_moveFollowsOffHand,				"HeadHand"
 	Slider "$VRPREFMNU_WEAPONANGLE", 			openvr_weaponRotate,					-180, 180, 1, 0
 	Slider "$VRPREFMNU_WORLDSCALE",				vr_vunits_per_meter,					1, 60, 1, 0
 	Slider "$VRPREFMNU_FLOOROFFSET",			vr_floor_offset,						-2, 2, 0.1, 2

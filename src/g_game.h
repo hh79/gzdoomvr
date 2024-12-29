@@ -106,6 +106,9 @@ void G_AddViewAngle (int yaw, bool mouse = false, bool track_hmd = false);
 // Similar as above, but handling "snap turn" way for VR
 void G_AddViewAngleSnap(int yaw, bool mouse);
 
+// Similar as above, but handling "snap turn" way for VR
+void G_AddViewAngleSnap(int yaw, bool mouse);
+
 class FBaseCVar;
 FBaseCVar* G_GetUserCVar(int playernum, const char* cvarname);
 

@@ -3418,6 +3418,8 @@ ignore floor z when teleporting,CMPTMNU_FDTELEPORT,,,,Při teleportu ignorovat v
 Forced-Perspective,OPTVAL_ANAMORPHIC,"Hardware Sprite Clipping mode that gives the illusion of a sprite being in a different position than it really is, allowing it to be rendered under the floor despite clipping",,,,,Erzwungene Perspektive,,,,,,,,,,,,,,,,,,Перспективный (анаморфотный),,,,
 VR Options,VRPREFMNU,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 Handedness,VRPREFMNU_HANDED,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Snap Turn,VRPREFMNU_ENABLESNAPTURN,,,,,,,,,,,,,,,,,,,,,,,,,,,,
+Snap Turn Angle,VRPREFMNU_SNAPANGLE,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 Move follows,VRPREFMNU_MOVEFOLLOW,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 Weapon Angle,VRPREFMNU_WEAPONANGLE,,,,,,,,,,,,,,,,,,,,,,,,,,,,
 Look Freedom,VRPREFMNU_LOOKFREEDOM,,,,,,,,,,,,,,,,,,,,,,,,,,,,

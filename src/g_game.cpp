@@ -885,11 +885,6 @@ void G_AddViewAngle (int yaw, bool mouse, bool track_hmd)
 	{
 		return;
 	}
-	if (vr_enable_snapTurn && ! track_hmd)
-	{
-		G_AddViewAngleSnap(yaw, mouse);
-		return;
-	}
 	yaw = LookAdjust(yaw);
 	LocalViewAngle -= yaw;
 	if (yaw != 0)
