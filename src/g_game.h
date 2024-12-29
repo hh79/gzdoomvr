@@ -101,7 +101,10 @@ void G_DoPlayerPop(int playernum);
 void G_AddViewPitch (int look, bool mouse = false);
 
 // Adds to consoleplayer's viewangle if allowed
-void G_AddViewAngle (int yaw, bool mouse = false);
+void G_AddViewAngle (int yaw, bool mouse = false, bool track_hmd = false);
+
+// Similar as above, but handling "snap turn" way for VR
+void G_AddViewAngleSnap(int yaw, bool mouse);
 
 class FBaseCVar;
 FBaseCVar* G_GetUserCVar(int playernum, const char* cvarname);

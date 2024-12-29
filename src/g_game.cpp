@@ -124,6 +124,8 @@ CVAR (Bool, cl_waitforsave, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR (Bool, enablescriptscreenshot, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR (Bool, cl_restartondeath, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 EXTERN_CVAR (Float, con_midtime);
+EXTERN_CVAR (Bool, vr_enable_snapTurn);
+EXTERN_CVAR (Float, vr_snapAngle);
 
 //==========================================================================
 //
@@ -877,12 +879,16 @@ void G_AddViewPitch (int look, bool mouse)
 	}
 }
 
-void G_AddViewAngle (int yaw, bool mouse)
+void G_AddViewAngle (int yaw, bool mouse, bool track_hmd)
 {
 	if (gamestate == GS_TITLELEVEL)
 	{
 		return;
-
+	}
+	if (vr_enable_snapTurn && ! track_hmd)
+	{
+		G_AddViewAngleSnap(yaw, mouse);
+		return;
 	}
 	yaw = LookAdjust(yaw);
 	LocalViewAngle -= yaw;
@@ -891,6 +897,28 @@ void G_AddViewAngle (int yaw, bool mouse)
 		LocalKeyboardTurner = !mouse;
 	}
 }
+
+
+void G_AddViewAngleSnap(int yaw, bool mouse)
+{
+	static int last_rotation_gametic = gametic - 2;
+	int base_yaw =  std::round(65535.0 * vr_snapAngle / 360.0);
+
+	int signed_rotation = (yaw < 0) ? -base_yaw : ((yaw > 0) ? base_yaw : 0);
+
+	if (signed_rotation)
+	{
+		if ((gametic - last_rotation_gametic) > 1)
+		{
+			signed_rotation = LookAdjust(signed_rotation);
+			LocalViewAngle -= signed_rotation;
+			LocalKeyboardTurner = !mouse;
+		}
+		last_rotation_gametic = gametic;
+	}
+
+}
+
 
 CVAR (Bool, bot_allowspy, false, 0)
 
