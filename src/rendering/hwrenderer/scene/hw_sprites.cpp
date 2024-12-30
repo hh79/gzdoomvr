@@ -847,15 +847,16 @@ void HWSprite::Process(HWDrawInfo *di, AActor* thing, sector_t * sector, area_t 
 	{
 		DVector3 viewpos = viewmaster->InterpolatedPosition(vp.TicFrac);
 		if (thruportal == 1) viewpos += di->Level->Displacements.getOffset(viewmaster->Sector->PortalGroup, sector->PortalGroup);
-		if (fabs(viewpos.X - vp.Pos.X) < 32 && fabs(viewpos.Y - vp.Pos.Y) < 32) return;
+		if (fabs(viewpos.X - vp.CenterPos.X) < 32 && fabs(viewpos.Y - vp.CenterPos.Y) < 32) return;
 	}
 
 	modelframe = isPicnumOverride ? nullptr : FindModelFrame(thing, spritenum, thing->frame, !!(thing->flags & MF_DROPPED));
 	modelframeflags = modelframe ? modelframe->getFlags(thing->modelData) : 0;
 
-	// Too close to the camera. This doesn't look good if it is a sprite.
-	if (fabs(thingpos.X - vp.Pos.X) < 2 && fabs(thingpos.Y - vp.Pos.Y) < 2
-		&& vp.Pos.Z >= thingpos.Z - 2 && vp.Pos.Z <= thingpos.Z + thing->Height + 2
+	// Too close to the camera. This doesn't look good if it is a sprite
+	// Prevent disappearing player sprite on mirror when moving
+	if (thing != camera && fabs(thingpos.X - vp.CenterPos.X) < 2 && fabs(thingpos.Y - vp.CenterPos.Y) < 2
+		&& vp.CenterPos.Z >= thingpos.Z - 2 && vp.CenterPos.Z <= thingpos.Z + thing->Height + 2
 		&& !thing->Vel.isZero() && !modelframe) // exclude vertically moving objects from this check.
 	{
 		return;

@@ -550,6 +550,7 @@ bool HWMirrorPortal::Setup(HWDrawInfo *di, FRenderState &rstate, Clipper *clippe
 		vp.Pos.X += v[1] * state->renderdepth / 2;
 		vp.Pos.Y += v[0] * state->renderdepth / 2;
 	}
+	vp.CenterPos += vp.Pos - StartPos;
 	vp.Angles.Yaw = linedef->Delta().Angle() * 2. - StartAngle;
 
 	vp.ViewActor = nullptr;
