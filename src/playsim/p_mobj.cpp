@@ -7255,15 +7255,25 @@ DEFINE_ACTION_FUNCTION(AActor, SpawnMissileAngleZSpeed)
 
 AActor *P_SpawnSubMissile(AActor *source, PClassActor *type, AActor *target)
 {
-	AActor *other = Spawn(source->Level, type, source->Pos(), ALLOW_REPLACE);
-
 	if (source == nullptr || type == nullptr)
 	{
 		return nullptr;
 	}
 
+	DAngle an = source->Angles.Yaw;
+	DAngle pitch = source->Angles.Pitch;
+	DVector3 pos = source->Pos();
+	if (source->player != NULL && source->player->mo->OverrideAttackPosDir)
+	{
+		pos = source->player->mo->AttackPos;
+		DVector3 dir = source->player->mo->AttackDir(source, an, pitch);
+		an = dir.Angle();
+		pitch = dir.Pitch();
+
+	}
+	AActor *other = Spawn(source->Level, type, pos, ALLOW_REPLACE);
 	other->target = target;
-	other->Angles.Yaw = source->Angles.Yaw;
+	other->Angles.Yaw = an;
 	other->VelFromAngle();
 
 	if (other->flags4 & MF4_SPECTRAL)

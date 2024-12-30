@@ -85,6 +85,33 @@ class StrifeGrenadeLauncher : StrifeWeapon
 			double an = Angle + angleofs;
 			offset += AngleToVector(an, 15);
 			grenade.SetOrigin(grenade.Vec3Offset(offset.X, offset.Y, 0.), false);
+
+			if (weapon !=null && player.mo.OverrideAttackPosDir)
+			{
+				Vector3 dir;
+				Vector3 offsetDir;
+				Vector3 zoffsetDir;
+				
+				dir = player.mo.AttackDir(self, Angle, pitch);
+				offsetDir = player.mo.AttackDir(self, Angle + angleofs, pitch);
+				zoffsetDir = player.mo.AttackDir(self, Angle, pitch + 90);
+				
+				Vector3 spawnoffset = (0, 0, 0);
+				let xofs = radius + grenade.radius;
+				spawnoffset += (
+					xofs * cos(dir.x) * cos(dir.y),
+					xofs * sin(dir.x) * cos(dir.y),
+					xofs * -sin(dir.y)
+				);
+
+				let yofs = 15;
+				spawnoffset += (
+					yofs * cos(offsetDir.x) * cos(offsetDir.y),
+					yofs * sin(offsetDir.x) * cos(offsetDir.y),
+					yofs * -sin(offsetDir.y)
+				);
+				grenade.SetOrigin(grenade.Vec3Offset(spawnoffset.X, spawnoffset.Y, spawnoffset.Z), false);
+			}
 		}
 	}
 }
