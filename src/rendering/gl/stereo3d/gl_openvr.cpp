@@ -1408,7 +1408,7 @@ namespace s3d
 				glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // draw a dark black universe
 				glClear(GL_COLOR_BUFFER_BIT);
 				//if (eyeCount - eye_ix > 1)
-					GLRenderer->mBuffers->NextEye(eyeCount);
+				GLRenderer->mBuffers->NextEye(eyeCount);
 			}
 			//GLRenderer->mBuffers->BlitToEyeTexture(GLRenderer->mBuffers->CurrentEye(), false);
 		}
@@ -1419,17 +1419,18 @@ namespace s3d
 			nullptr, 0 // future pose?
 		);
 
+		player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
+
 		TrackedDevicePose_t& hmdPose0 = poses[k_unTrackedDeviceIndex_Hmd];
-		
+
 		if (hmdPose0.bPoseIsValid) {
 			const HmdMatrix34_t& hmdPose = hmdPose0.mDeviceToAbsoluteTracking;
 			HmdVector3d_t eulerAngles = eulerAnglesFromMatrix(hmdPose);
 			updateHmdPose(r_viewpoint, eulerAngles.v[0], eulerAngles.v[1], eulerAngles.v[2]);
 			leftEyeView->setCurrentHmdPose(&hmdPose0);
 			rightEyeView->setCurrentHmdPose(&hmdPose0);
-			
-			player_t* player = r_viewpoint.camera ? r_viewpoint.camera->player : nullptr;
 
+			
 			// Check for existence of VR motion controllers...
 			for (int i = 0; i < vr::k_unMaxTrackedDeviceCount; ++i) {
 				if (i == k_unTrackedDeviceIndex_Hmd)
@@ -1504,7 +1505,7 @@ namespace s3d
 
 				}
 			}
-	
+
 			LSMatrix44 mat;
 			if (player)
 			{
@@ -1516,7 +1517,7 @@ namespace s3d
 					player->mo->AttackPos.Y = mat[3][2];
 					player->mo->AttackPos.Z = mat[3][1];
 
-					
+
 					player->mo->AttackDir = MapAttackDir;
 
 					vec3_t weaponangles;
@@ -1530,7 +1531,7 @@ namespace s3d
 					double cameraYaw = RAD2DEG(hmdAngles.v[0]);
 					double doomYaw = r_viewpoint.camera->Angles.Yaw.Degrees();
 					player->mo->AttackPitch = DAngle::fromDeg(-weaponangles[PITCH]);
-					player->mo->AttackAngle = DAngle::fromDeg(-90 + doomYaw + (weaponangles[YAW]- cameraYaw));
+					player->mo->AttackAngle = DAngle::fromDeg(-90 + doomYaw + (weaponangles[YAW] - cameraYaw));
 					player->mo->AttackRoll = DAngle::fromDeg(weaponangles[ROLL]);
 
 				}
@@ -1543,7 +1544,7 @@ namespace s3d
 					player->mo->ThrustAngleOffset = nullAngle;
 				}
 				auto vel = player->mo->Vel;
-				player->mo->Vel = DVector3((DVector2(-openvr_dpos.x, openvr_dpos.z) *vr_vunits_per_meter).Rotated(openvr_to_doom_angle), 0);
+				player->mo->Vel = DVector3((DVector2(-openvr_dpos.x, openvr_dpos.z) * vr_vunits_per_meter).Rotated(openvr_to_doom_angle), 0);
 				bool wasOnGround = player->mo->Z() <= player->mo->floorz + 2;
 				double oldZ = player->mo->Z();
 				P_XYMovement(player->mo, DVector2(0, 0));
@@ -1561,7 +1562,7 @@ namespace s3d
 				openvr_origin += openvr_dpos;
 			}
 		}
-		
+
 		I_StartupOpenVR();
 
 		//To feel smooth, yaw changes need to accumulate over the (sub) tic (i.e. render frame, not per tic)
@@ -1573,13 +1574,16 @@ namespace s3d
 
 		int yaw = -1280 * I_OpenVRGetYaw() * delta * 30 / 1000;
 
-		if (!vr_enable_snapTurn)
+		if (!paused && player && player->mo->health > 0)
 		{
-			G_AddViewAngle(yaw, true);
-		}
-		else
-		{
-			G_AddViewAngleSnap(yaw, true);
+			if (!vr_enable_snapTurn)
+			{
+				G_AddViewAngle(yaw, true);
+			}
+			else
+			{
+				G_AddViewAngleSnap(yaw, true);
+			}
 		}
 	}
 

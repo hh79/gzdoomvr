@@ -53,7 +53,7 @@ class PlayerPawn : Actor
 	double		FullHeight;
 	double		curBob;
 	double		prevBob;
-	bool		disabledDeathChase;
+	bool		disabledDeathChase;		// Flag to disable camera killer chase
 
 	meta Name HealingRadiusType;
 	meta Name InvulMode;
