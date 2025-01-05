@@ -1119,6 +1119,7 @@ namespace s3d
 
 	/* virtual */
 	void OpenVRMode::Present() const {
+		GLRenderer->mBuffers->BlitToEyeTexture(GLRenderer->mBuffers->CurrentEye(), false);
 		// TODO: For performance, don't render to the desktop screen here
 		if (doRenderToDesktop) {
 			GLRenderer->mBuffers->BindOutputFB();
@@ -1406,10 +1407,10 @@ namespace s3d
 				GLRenderer->mBuffers->BindCurrentFB();
 				glClearColor(0.0f, 0.0f, 0.0f, 1.0f); // draw a dark black universe
 				glClear(GL_COLOR_BUFFER_BIT);
-				if (eyeCount - eye_ix > 1)
+				//if (eyeCount - eye_ix > 1)
 					GLRenderer->mBuffers->NextEye(eyeCount);
 			}
-			GLRenderer->mBuffers->BlitToEyeTexture(GLRenderer->mBuffers->CurrentEye(), false);
+			//GLRenderer->mBuffers->BlitToEyeTexture(GLRenderer->mBuffers->CurrentEye(), false);
 		}
 
 		static TrackedDevicePose_t poses[k_unMaxTrackedDeviceCount];
