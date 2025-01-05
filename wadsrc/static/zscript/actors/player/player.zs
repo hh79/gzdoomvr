@@ -53,6 +53,7 @@ class PlayerPawn : Actor
 	double		FullHeight;
 	double		curBob;
 	double		prevBob;
+	bool		disabledDeathChase;
 
 	meta Name HealingRadiusType;
 	meta Name InvulMode;
@@ -732,7 +733,7 @@ class PlayerPawn : Actor
 		player.mo.CalcHeight ();
 			
 		// Disable for VR mode, player camera should always follow HMD
-		if (false && player.attacker && player.attacker != self)
+		if (!disabledDeathChase && player.attacker && player.attacker != self)
 		{ // Watch killer
 			double diff = deltaangle(angle, AngleTo(player.attacker));
 			double delta = abs(diff);
@@ -747,6 +748,7 @@ class PlayerPawn : Actor
 				{
 					player.poisoncount--;
 				}
+				disabledDeathChase = true;
 			}
 			delta /= 8;
 			Angle += clamp(diff, -5., 5.);
