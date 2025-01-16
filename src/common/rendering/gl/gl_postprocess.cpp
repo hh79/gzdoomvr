@@ -118,7 +118,7 @@ void FGLRenderer::Flush()
 	}
 	else
 	{
-		const bool is2D = (gamestate != GS_LEVEL);
+		const bool is2D = (gamestate != GS_LEVEL && gamestate != GS_TITLELEVEL);
 		if (is2D) vrmode->SetUp();
 		// Render 2D to eye textures
 		int eyeCount = vrmode->mEyeCount;
