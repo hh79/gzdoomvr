@@ -1878,14 +1878,17 @@ void TryRunTics (void)
 	int 		numplaying;
 
 	bool doWait = (cl_capfps || pauseext || (r_NoInterpolate && !M_IsAnimated()));
+
 	auto vrmode = VRMode::GetVRMode();
+	if (vrmode->IsVR())
+	{
+		doWait = false;
+	}
 
 	// get real tics
 	if (doWait)
 	{
-		entertic = vrmode->IsVR() ? 
-			I_GetTime() :
-			I_WaitForTic (oldentertics);
+		entertic = I_WaitForTic (oldentertics);
 	}
 	else
 	{
@@ -1930,7 +1933,7 @@ void TryRunTics (void)
 		counts = availabletics;
 	
 	// Uncapped framerate needs seprate checks
-	if (counts == 0 && (!doWait || vrmode->IsVR()))
+	if (counts == 0 && (!doWait))
 	{
 		TicStabilityWait();
 
