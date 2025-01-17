@@ -460,7 +460,7 @@ bool P_NoInterpolation(player_t const *player, AActor const *actor)
 {
 	auto vrmode = VRMode::GetVRMode();
 
-	return player != nullptr
+	return player != nullptr 
 		&& !(player->cheats & CF_INTERPVIEW)
 		&& player - players == consoleplayer
 		&& actor == player->mo
@@ -903,6 +903,35 @@ static void R_DoActorTickerAngleChanges(player_t* const player, DRotator& angles
 
 //==========================================================================
 //
+// R_VR_UnlockCameraYawn
+//
+//==========================================================================
+// For VR mode, when the viewpoint is attached to a camera and not the player actor,
+// the yaw must be set to the value in r_viewpoint, which holds the correct HMD yaw.
+// This should be done for all frames except the first one after the camera is changed,
+// to preserve the default camera position.
+void VR_UnlockCameraYaw(FRenderViewpoint& viewPoint, InterpolationViewer* iView, player_t* player)
+{
+	static bool prevYaw = false;
+	static AActor* prevCamera = nullptr;
+	const auto& mainView = r_viewpoint;
+	const DAngle curYaw = mainView.Angles.Yaw;
+
+	if (prevCamera != viewPoint.camera)
+	{
+		prevYaw = false;
+	}
+
+	if (!player)
+	{
+		iView->New.Angles.Yaw = !prevYaw ? viewPoint.camera->Angles.Yaw : curYaw;
+	}
+
+	prevYaw = true;
+	prevCamera = viewPoint.camera;
+}
+//==========================================================================
+//
 // R_SetupFrame
 //
 //==========================================================================
@@ -912,6 +941,8 @@ EXTERN_CVAR(Float, chase_height)
 
 void R_SetupFrame(FRenderViewpoint& viewPoint, const FViewWindow& viewWindow, AActor* const actor)
 {
+	auto vrmode = VRMode::GetVRMode(true);
+
 	viewPoint.TicFrac = I_GetTimeFrac();
 	if (cl_capfps || r_NoInterpolate)
 		viewPoint.TicFrac = 1.0;
@@ -1047,8 +1078,7 @@ void R_SetupFrame(FRenderViewpoint& viewPoint, const FViewWindow& viewWindow, AA
 			if (vr_quake_haptic_level > 0.0) {
 				double left = QuakePower(vr_quake_haptic_level, jiggers.Intensity.X, jiggers.Offset.X);
 				double right = QuakePower(vr_quake_haptic_level, jiggers.Intensity.Y, jiggers.Offset.Y);
-
-				auto vrmode = VRMode::GetVRMode(true);
+				
 				vrmode->Vibrate(10, 0, (float)left); // left
 				vrmode->Vibrate(10, 1, (float)right); // right
 			}
@@ -1060,6 +1090,9 @@ void R_SetupFrame(FRenderViewpoint& viewPoint, const FViewWindow& viewWindow, AA
 		iView->New.Angles = usePawn ? (client->flags8 & MF8_ABSVIEWANGLES ? client->ViewAngles : client->Angles + client->ViewAngles) : mainView.Angles;
 	else
 		iView->New.Angles = !(viewPoint.camera->flags8 & MF8_ABSVIEWANGLES) ? viewPoint.camera->Angles : viewPoint.camera->ViewAngles;
+	
+	if (vrmode->IsVR())
+		VR_UnlockCameraYaw(viewPoint, iView, player);
 
 	iView->New.ViewAngles = viewPoint.camera->ViewAngles;
 	// [MR] Process player angle changes if permitted to do so.
@@ -1067,7 +1100,8 @@ void R_SetupFrame(FRenderViewpoint& viewPoint, const FViewWindow& viewWindow, AA
 		R_DoActorTickerAngleChanges(player, iView->New.Angles, viewPoint.TicFrac);
 
 	// If currently tracking the player's real view, don't do any sort of interpolating.
-	if (matchPlayer && !usePawn)
+	// For VR mode, when the viewpoint is attached to a camera also don't interpolate.
+	if ((matchPlayer || (vrmode->IsVR() && !player)) && !usePawn)
 		viewPoint.camera->renderflags |= RF_NOINTERPOLATEVIEW;
 
 	if (viewPoint.camera->player != nullptr)
