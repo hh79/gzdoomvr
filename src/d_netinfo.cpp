@@ -62,7 +62,7 @@ CVAR (String,	skin,					"base",		CVAR_USERINFO | CVAR_ARCHIVE);
 CVAR (Int,		team,					TEAM_NONE,	CVAR_USERINFO | CVAR_ARCHIVE);
 CVAR (String,	gender,					"male",		CVAR_USERINFO | CVAR_ARCHIVE);
 CVAR (Bool,		neverswitchonpickup,	false,		CVAR_USERINFO | CVAR_ARCHIVE);
-CVAR (Float,	movebob,				0.25f,		CVAR_USERINFO | CVAR_ARCHIVE);
+CVAR (Float,	movebob,				0.f,			CVAR_USERINFO | CVAR_ARCHIVE);
 CVAR (Bool,		fviewbob,               true,       CVAR_USERINFO | CVAR_ARCHIVE);
 CVAR (Float,	stillbob,				0.f,		CVAR_USERINFO | CVAR_ARCHIVE);
 CVAR (Float,	wbobspeed,				1.f,		CVAR_USERINFO | CVAR_ARCHIVE);

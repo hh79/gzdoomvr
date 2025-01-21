@@ -1495,7 +1495,6 @@ namespace s3d
 		// Set VR-appropriate settings
 		const bool doAdjustVrSettings = true;
 		if (doAdjustVrSettings) {
-			movebob = 0;
 			gl_billboard_faces_camera = true;
 		}
 
