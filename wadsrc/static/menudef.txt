@@ -2747,18 +2747,25 @@ OptionMenu VRHUDOptions protected
 OptionMenu "OpenVROptions" protected
 {
 	Title "$VRPREFMNU" 
+
+	StaticText "$VRPREFMNU_BINDINGS"
 	Option "$VRPREFMNU_HANDED", 				openvr_rightHanded,						"LeftRight"
+	Option "$VRPREFMNU_ALTMAPPINGS",			vr_alternate_mappings,					"OnOff"
+	StaticText " "
+	StaticText "$VRPREFMNU_MOVEMENT"
 	Option "$VRPREFMNU_MOVEFOLLOW", 			openvr_moveFollowsOffHand,				"HeadHand"
 	Option "$VRPREFMNU_ENABLESNAPTURN", 		vr_enable_snapTurn,						"OnOff"
 	Slider "$VRPREFMNU_SNAPANGLE", 				vr_snapAngle,							15, 90, 15, 0
-	Slider "$VRPREFMNU_WEAPONANGLE", 			openvr_weaponRotate,					-180, 180, 1, 0
+	Option "$VRPREFMNU_MOMENTUM",	    		vr_kill_momentum, "OnOff"
+	StaticText " "
+	StaticText "$VRPREFMNU_WORLD"
 	Slider "$VRPREFMNU_WORLDSCALE",				vr_vunits_per_meter,					1, 60, 1, 0
 	Slider "$VRPREFMNU_FLOOROFFSET",			vr_floor_offset,						-2, 2, 0.1, 2
+	StaticText " "
+	StaticText "$VRPREFMNU_WEAPON"
 	Option "$VRPREFMNU_SPRITEWEAPON3D",			r_PlayerSprites3DMode,					"Sprites3DMode"
 	Slider "$VRPREFMNU_FATITEMWIDTH",			gl_fatItemWidth,						0, 1, 0.05, 2
 	Slider "$VRPREFMNU_WEAPONSCALE",			openvr_weaponScale,						0, 1, 0.05, 2
-	StaticText " "
-	Option "$VRPREFMNU_MOMENTUM",	    		vr_kill_momentum, "OnOff"
 	Option "$VRPREFMNU_DRAWCONTROLLERS",		openvr_drawControllers,					"OnOff"
 	StaticText " "
 	StaticText "$VRPREFMNU_HAPTICS"

@@ -124,8 +124,8 @@ CVAR (Bool, cl_waitforsave, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR (Bool, enablescriptscreenshot, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 CVAR (Bool, cl_restartondeath, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG);
 EXTERN_CVAR (Float, con_midtime);
-EXTERN_CVAR (Bool, vr_enable_snapTurn);
-EXTERN_CVAR (Float, vr_snapAngle);
+EXTERN_CVAR (Bool, vr_snap_turn);
+EXTERN_CVAR (Float, vr_snap_angle);
 
 //==========================================================================
 //
@@ -897,7 +897,7 @@ void G_AddViewAngle (int yaw, bool mouse, bool track_hmd)
 void G_AddViewAngleSnap(int yaw, bool mouse)
 {
 	static int last_rotation_gametic = gametic - 2;
-	int base_yaw =  std::round(65535.0 * vr_snapAngle / 360.0);
+	int base_yaw =  std::round(65535.0 * vr_snap_angle / 360.0);
 
 	int signed_rotation = (yaw < 0) ? -base_yaw : ((yaw > 0) ? base_yaw : 0);
 

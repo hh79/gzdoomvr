@@ -62,8 +62,8 @@ CVAR(Bool, openvr_drawControllers, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, openvr_weaponRotate, -40.0f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, openvr_weaponScale, 0.3f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
-CVAR(Bool, vr_enable_snapTurn, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
-CVAR(Float, vr_snapAngle, 45.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Bool, vr_snap_turn, false, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+CVAR(Float, vr_snap_angle, 45.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_enable_haptics, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_pickup_haptic_level, 0.25f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_quake_haptic_level, 0.8f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
@@ -85,6 +85,9 @@ CVAR(Float, vr_automap_distance, 1.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Float, vr_automap_rotate, 10.f, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_automap_fixed_pitch, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 CVAR(Bool, vr_automap_fixed_roll, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
+
+//Bindings
+CVAR(Bool, vr_alternate_mappings, true, CVAR_ARCHIVE | CVAR_GLOBALCONFIG)
 
 #define isqrt2 0.7071067812f
 

@@ -43,30 +43,27 @@ mwheelup weapprev
 
 // Originally just for Heretic, Hexen, and Strife.
 // I can't see why they shouldn't be for Doom or Chex either.
-pgup +moveup
 ins +movedown
 home land
-pgdn +lookup
 del +lookdown
 end centerview
 
-// Xbox 360 / PS2 controllers
-pad_start +jump 
-pad_back togglemap
-pad_a menu_main
-pad_b +use
+// Oculus touch controllers
+pad_a +use
+pad_b +jump
+pad_x invuse
+pad_y togglemap
 rtrigger +attack
+rtrigger_alt +altattack
 ltrigger +altattack
 lshoulder +speed
-rshoulder weapnext
-dpadleft invprev
-dpadright invnext
-dpaddown invuse
-dpadup togglemap
+dpaddown invprev
+dpadup invnext
 rthumb crouch
 lthumb invuse
-axis4plus invnext
-axis4minus invprev
+pad_a_alt menu_main
+pad_b_alt crouch
+pad_y_alt pause
 
 // Generic gamepad bindings
 joy1 +use

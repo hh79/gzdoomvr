@@ -234,8 +234,20 @@ struct InputEvent native play version("2.4")
         Key_Pad_B = 0x1C1,
         Key_Pad_X = 0x1C2,
         Key_Pad_Y = 0x1C3,
+        Key_Pad_Start_Alt = 0x1C4,
+        Key_Pad_Back_Alt = 0x1C5,
+        Key_Pad_LThumb_Alt = 0x1C6,
+        Key_Pad_RThumb_Alt = 0x1C7,
+        Key_Pad_LShoulder_Alt = 0x1C8,
+        Key_Pad_RShoulder_Alt = 0x1C9,
+        Key_Pad_LTrigger_Alt = 0x1CA,
+        Key_Pad_RTrigger_Alt = 0x1CB,
+        Key_Pad_A_Alt = 0x1CC,
+        Key_Pad_B_Alt = 0x1CD,
+        Key_Pad_X_Alt = 0x1CE,
+        Key_Pad_Y_Alt = 0x1CF,
 
-        Num_Keys = 0x1C4
+        Num_Keys = 0x1D0
     }
     
     //
