@@ -292,6 +292,7 @@ CUSTOM_CVAR (String, vid_cursor, "None", CVAR_ARCHIVE | CVAR_NOINITCALL)
 		I_SetCursor(TexMan.GetGameTextureByName("cursor"));
 	}
 }
+CVAR(Bool, scr_allowunsafe, false, CVAR_NOSET);
 
 // Controlled by startup dialog
 CVAR(Bool, disableautoload, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
@@ -2122,6 +2123,7 @@ static void CheckCmdLine()
 	if (Args->CheckParm ("-nomonsters"))	flags |= DF_NO_MONSTERS;
 	if (Args->CheckParm ("-respawn"))		flags |= DF_MONSTERS_RESPAWN;
 	if (Args->CheckParm ("-fast"))			flags |= DF_FAST_MONSTERS;
+	scr_allowunsafe = !!Args->CheckParm("-unsafe");
 
 	devparm = !!Args->CheckParm ("-devparm");
 

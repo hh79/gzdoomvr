@@ -45,6 +45,7 @@
 #include "v_font.h"
 #include "palettecontainer.h"
 
+EXTERN_CVAR(Bool, scr_allowunsafe)
 
 extern FRandom pr_exrandom;
 FMemArena FxAlloc(65536);
@@ -8993,7 +8994,8 @@ FxExpression *FxMemberFunctionCall::Resolve(FCompileContext& ctx)
 		}
 		else
 		{
-			if (PFunction **Override; (Override = static_cast<PDynArray*>(Self->ValueType)->FnOverrides.CheckKey(MethodName)))
+			if (PFunction** Override; !scr_allowunsafe && (Override = static_cast<PDynArray*>(Self->ValueType)->FnOverrides.CheckKey(MethodName)))
+
 			{
 				afd_override = *Override;
 			}
