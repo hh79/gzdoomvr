@@ -805,6 +805,8 @@ public:
 	void RemoveForceField();
 	int Index() const { return sectornum; }
 
+	bool IsDangerous(const DVector3& pos, double height) const;
+
 	void AdjustFloorClip () const;
 	void SetColor(PalEntry pe, int desat);
 	void SetFade(PalEntry pe);
@@ -1027,6 +1029,16 @@ public:
 	secplane_t &GetSecPlane(int pos)
 	{
 		return pos == floor? floorplane:ceilingplane;
+	}
+
+	void SetPlaneReflectivity(int pos, double val)
+	{
+		reflect[pos] = val;
+	}
+
+	double GetPlaneReflectivity(int pos)
+	{
+		return reflect[pos];
 	}
 
 	bool isSecret() const
