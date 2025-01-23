@@ -144,7 +144,8 @@ extend class StateProvider
 		A_StartSound (hitsound, CHAN_WEAPON);
 			
 		// turn to face target
-		if (!(flags & SF_NOTURN))
+		// disabled because of VR mod
+		if (false && !(flags & SF_NOTURN))
 		{
 			double anglediff = deltaangle(angle, t.angleFromSource);
 
