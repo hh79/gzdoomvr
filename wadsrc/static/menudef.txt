@@ -2754,8 +2754,8 @@ OptionMenu "OpenVROptions" protected
 	StaticText " "
 	StaticText "$VRPREFMNU_MOVEMENT"
 	Option "$VRPREFMNU_MOVEFOLLOW", 			openvr_moveFollowsOffHand,				"HeadHand"
-	Option "$VRPREFMNU_ENABLESNAPTURN", 		vr_enable_snapTurn,						"OnOff"
-	Slider "$VRPREFMNU_SNAPANGLE", 				vr_snapAngle,							15, 90, 15, 0
+	Option "$VRPREFMNU_ENABLESNAPTURN", 		vr_snap_turn,							"OnOff"
+	Slider "$VRPREFMNU_SNAPANGLE", 				vr_snap_angle,							15, 90, 15, 0
 	Option "$VRPREFMNU_MOMENTUM",	    		vr_kill_momentum, "OnOff"
 	StaticText " "
 	StaticText "$VRPREFMNU_WORLD"
