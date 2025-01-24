@@ -3,12 +3,12 @@ This is a VR fork of GZDoom based on gz3doom http://rotatingpenguin.com/gz3doom/
 
 The build has been developed and tested on the Meta Quest using Virtual Desktop. However, it should also work with other VR setups that are compatible with the OpenVR API.
 
-This version enables OpenVR controller input customization, allowing you to define controls according to your preference. By default, one hand (right) is tracked for weapon handling. Additionally, it includes a modified weapon pack created by Fishbiter.
+This version enables OpenVR controller input customization, allowing you to define controls according to your preference. By default, one hand (dominant) is tracked for weapon handling. Additionally, it includes a modified weapon pack created by Fishbiter.
 
 ## Controller Info
 
 ### Meta Quest Controllers
-Default controller bindings are provided and are similar to those used in QuestZDoom.
+Default controller bindings are provided. By default, secondary mappings are enabled when the dominant grip is pushed. You can disable this, but remember to provide your own binding to open the main menu.
 
 ### Index Controllers
 To fully utilize your Index Controllers, select the Community Binding 'Index Controller Bindings' by gameflorist in SteamVR. This configuration provides the maximum number of buttons available for binding in GZDoom.
@@ -16,21 +16,23 @@ To fully utilize your Index Controllers, select the Community Binding 'Index Con
 
 ## Default Controls
 
-* A Button - Open Door / Switch
-* B Button - Jump
-* Y Button - Toggle AutoMap
-* X Button - Open main menu
+You can switch your dominant hand using the "Handness" option.
 
-* Right-Hand Controller - Weapon orientation
-* Right-Hand Trigger - Fire Weapon
-* Right-Hand Grip Button - Weapon change
-* Right-Hand Thumbstick - up/down Item change
-* Right-Hand Thumbstick click - Crouch
+* Dominant-Hand A Button - Open Door / Switch
+* Dominant-Hand B Button - Jump
+* Off-Hand X(A) Button - Inventory use
+* Off-Hand Y(B) Button - Toggle AutoMap
 
-* Left-Hand Controller - Direction of movement (or if configured settings HMD direction is used)
-* Left-Hand Trigger - Alternate fire weapon
-* Left-Hand Grip Button - Run
-* Left-Hand Thumbstick click - Item use
+* Dominant-Hand Controller - Weapon orientation
+* Dominant-Hand Trigger - Fire Weapon
+* Dominant-Hand Grip Button - Weapon change
+* Dominant-Hand Thumbstick - up/down Item change
+* Dominant-Hand Thumbstick click - Crouch
+
+* Off-Hand Controller - Direction of movement (or if configured settings HMD direction is used)
+* Off-Hand Trigger - Alternate fire weapon
+* Off-Hand Grip Button - Run
+* Off-Hand Thumbstick click - Item use
 
 ## Mods
 There are some optional mods tested for using with this fork
