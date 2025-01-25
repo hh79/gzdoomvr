@@ -18,22 +18,34 @@ To fully utilize your Index Controllers, select the Community Binding 'Index Con
 
 You can switch your dominant hand using the "Handness" option.
 
-* Dominant-Hand A Button - Open Door / Switch
-* Dominant-Hand B Button - Jump
-* Off-Hand X(A) Button - Inventory use
-* Off-Hand Y(B) Button - Toggle AutoMap
+### Primary Mappings
 
-* Dominant-Hand Controller - Weapon orientation
-* Dominant-Hand Trigger - Fire Weapon
-* Dominant-Hand Grip Button - Weapon change
-* Dominant-Hand Thumbstick - up/down Item change
-* Dominant-Hand Thumbstick click - Crouch
+* **Dominant-Hand A Button** - Open Door / Switch
+* **Dominant-Hand B Button** - Jump
+* **Off-Hand X(A) Button** - Item use
+* **Off-Hand Y(B) Button** - Toggle AutoMap
 
-* Off-Hand Controller - Direction of movement (or if configured settings HMD direction is used)
-* Off-Hand Trigger - Alternate fire weapon
-* Off-Hand Grip Button - Run
-* Off-Hand Thumbstick click - Item use
+* **Dominant-Hand Controller** - Weapon orientation
+* **Dominant-Hand Trigger** - Fire Weapon
+* **Dominant-Hand Grip Button** - Enables secondary mappings
+* **Dominant-Hand Thumbstick click** - Crouch
 
+* **Off-Hand Controller** - Direction of movement (or if configured settings HMD direction is used)
+* **Off-Hand Trigger** - Alternate fire weapon
+* **Off-Hand Grip Button** - Run
+* **Off-Hand Thumbstick click** - Item use
+
+### Secondary Mappings
+
+* **Dominant-Hand A Button** - Open Main Menu
+* **Dominant-Hand B Button** - Crouch
+* **Off-Hand Y(B) Button** - Pause
+
+* **Dominant-Hand Trigger** - Alternate fire weapon 
+* **Dominant-Hand Thumbstick** - up/down Weapon change
+
+* **Off-Hand Thumbstick** - up/down Item change
+  
 ## Mods
 There are some optional mods tested for using with this fork
 
