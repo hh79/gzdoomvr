@@ -1095,13 +1095,11 @@ namespace s3d
 			DVector3 direction = { pc * yaw.Cos(), pc * yaw.Sin(), -pitch.Sin() };
 			return direction;
 		}
-		double pc = pitch.Cos();
-
-		DVector3 refdirection = { pc * yaw.Cos(), pc * yaw.Sin(), -pitch.Sin() };
 
 		yaw -= actor->Angles.Yaw;
-
-		pc = pitch.Cos();
+		pitch -= actor->Angles.Pitch;
+		
+		double pc = pitch.Cos();
 
 		LSVec3 local = { (float)(pc * yaw.Cos()), (float)(pc * yaw.Sin()), (float)(-pitch.Sin()), 0.0f };
 
