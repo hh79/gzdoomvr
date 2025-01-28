@@ -292,6 +292,7 @@ CUSTOM_CVAR (String, vid_cursor, "None", CVAR_ARCHIVE | CVAR_NOINITCALL)
 		I_SetCursor(TexMan.GetGameTextureByName("cursor"));
 	}
 }
+CVAR(Bool, scr_allowunsafe, false, CVAR_NOSET);
 
 // Controlled by startup dialog
 CVAR(Bool, disableautoload, false, CVAR_ARCHIVE | CVAR_NOINITCALL | CVAR_GLOBALCONFIG)
@@ -2122,6 +2123,7 @@ static void CheckCmdLine()
 	if (Args->CheckParm ("-nomonsters"))	flags |= DF_NO_MONSTERS;
 	if (Args->CheckParm ("-respawn"))		flags |= DF_MONSTERS_RESPAWN;
 	if (Args->CheckParm ("-fast"))			flags |= DF_FAST_MONSTERS;
+	scr_allowunsafe = !!Args->CheckParm("-unsafe");
 
 	devparm = !!Args->CheckParm ("-devparm");
 
@@ -3045,39 +3047,6 @@ static void System_HudScaleChanged()
 
 bool  CheckSkipGameOptionBlock(const char* str);
 
-//==========================================================================
-//
-//
-//
-//==========================================================================
-
-static FILE* D_GetHashFile()
-{
-	FILE *hashfile = nullptr;
-
-	if (Args->CheckParm("-hashfiles"))
-	{
-		const char *filename = "fileinfo.txt";
-		Printf("Hashing loaded content to: %s\n", filename);
-		hashfile = fopen(filename, "w");
-		if (hashfile)
-		{
-			Printf("Notice: File hashing is incredibly verbose. Expect loading files to take much longer than usual.\n");
-			fprintf(hashfile, "%s version %s (%s)\n", GAMENAME, GetVersionString(), GetGitHash());
-#ifdef __VERSION__
-			fprintf(hashfile, "Compiler version: %s\n", __VERSION__);
-#endif
-			fprintf(hashfile, "Command line:");
-			for (int i = 0; i < Args->NumArgs(); ++i)
-			{
-				fprintf(hashfile, " %s", Args->GetArg(i));
-			}
-			fprintf(hashfile, "\n");
-		}
-	}
-	return hashfile;
-}
-
 // checks if a file within a directory is allowed to be added to the file system.
 static bool FileNameCheck(const char* base, const char* path)
 {
@@ -3234,8 +3203,7 @@ static int D_InitGame(const FIWADInfo* iwad_info, std::vector<std::string>& allw
 	);
 
 	bool allowduplicates = Args->CheckParm("-allowduplicates");
-	auto hashfile = D_GetHashFile();
-	if (!fileSystem.InitMultipleFiles(allwads, &lfi, FileSystemPrintf, allowduplicates, hashfile))
+	if (!fileSystem.InitMultipleFiles(allwads, &lfi, FileSystemPrintf, allowduplicates))
 	{
 		I_FatalError("FileSystem: no files found");
 	}
