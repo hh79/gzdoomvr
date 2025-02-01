@@ -41,6 +41,7 @@
 #include "gl/stereo3d/gl_openvr.h"
 #include "version.h"
 #include "i_interface.h"
+#include "vm.h"
 
 // Set up 3D-specific console variables:
 CVAR(Int, vr_mode, 10, CVAR_GLOBALCONFIG  | CVAR_ARCHIVE)
@@ -277,3 +278,14 @@ DVector3 VREyeInfo::GetViewShift(float yaw) const
 	}
 }
 
+DEFINE_ACTION_FUNCTION(_VRMode, GetVRMode)
+{
+	PARAM_PROLOGUE;
+	ACTION_RETURN_POINTER((void*)VRMode::GetVRMode(true));
+}
+
+DEFINE_ACTION_FUNCTION(_VRMode, IsVR)
+{
+	PARAM_SELF_STRUCT_PROLOGUE(VRMode);
+	ACTION_RETURN_BOOL(self->IsVR());
+}

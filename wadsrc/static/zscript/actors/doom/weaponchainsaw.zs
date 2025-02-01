@@ -144,8 +144,8 @@ extend class StateProvider
 		A_StartSound (hitsound, CHAN_WEAPON);
 			
 		// turn to face target
-		// disabled because of VR mod
-		if (false && !(flags & SF_NOTURN))
+		VRMode vrmode = VRMode.GetVRMode();
+		if (!vrmode.IsVR() && !(flags & SF_NOTURN))
 		{
 			double anglediff = deltaangle(angle, t.angleFromSource);
 
@@ -163,8 +163,9 @@ extend class StateProvider
 				else
 					angle += 4.5;
 			}
+		
+			if (!(flags & SF_NOPULLIN))
+				bJustAttacked = true;
 		}
-		if (!(flags & SF_NOPULLIN))
-			bJustAttacked = true;
 	}
 }

@@ -72,8 +72,8 @@ extend class Actor
 		LineAttack (ang, range, pitch, damage, 'Melee', "BulletPuff", LAF_ISMELEEATTACK, t);
 
 		// turn to face target
-		// disabled because of VR mod
-		if (false && t.linetarget)
+		VRMode vrmode = VRMode.GetVRMode();
+		if (!vrmode.IsVR() && t.linetarget)
 		{
 			A_StartSound ("*fist", CHAN_WEAPON);
 			angle = t.angleFromSource;

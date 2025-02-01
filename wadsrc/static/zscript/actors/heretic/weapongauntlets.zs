@@ -123,24 +123,28 @@ class Gauntlets : Weapon
 			A_StartSound ("weapons/gauntletshit", CHAN_AUTO);
 		}
 		// turn to face target
-		ang = t.angleFromSource;
-		double anglediff = deltaangle(angle, ang);
+		VRMode vrmode = VRMode.GetVRMode();
+		if (!vrmode.IsVR())
+		{
+			ang = t.angleFromSource;
+			double anglediff = deltaangle(angle, ang);
 
-		if (anglediff < 0.0)
-		{
-			if (anglediff < -4.5)
-				angle = ang + 90.0 / 21;
+			if (anglediff < 0.0)
+			{
+				if (anglediff < -4.5)
+					angle = ang + 90.0 / 21;
+				else
+					angle -= 4.5;
+			}
 			else
-				angle -= 4.5;
+			{
+				if (anglediff > 4.5)
+					angle = ang - 90.0 / 21;
+				else
+					angle += 4.5;
+			}
+			bJustAttacked = true;
 		}
-		else
-		{
-			if (anglediff > 4.5)
-				angle = ang - 90.0 / 21;
-			else
-				angle += 4.5;
-		}
-		bJustAttacked = true;
 	}
 }
 

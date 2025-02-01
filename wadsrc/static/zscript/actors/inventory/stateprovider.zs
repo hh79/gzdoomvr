@@ -346,7 +346,11 @@ class StateProvider : Inventory
 			if (!(flags & CPF_NOTURN))
 			{
 				// turn to face target
-				self.Angle = t.angleFromSource;
+				VRMode vrmode = VRMode.GetVRMode();
+				if(!vrmode.IsVR())
+				{
+					self.Angle = t.angleFromSource;
+				}
 			}
 
 			if (flags & CPF_PULLIN) self.bJustAttacked = true;

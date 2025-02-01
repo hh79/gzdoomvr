@@ -383,7 +383,8 @@ extend class Weapon
 		LineAttack(ang, range, pitch, damage, 'Melee', "BulletPuff", LAF_ISMELEEATTACK, t);
 
 		// turn to face target
-		if (t.linetarget)
+		VRMode vrmode = VRMode.GetVRMode();
+		if (!vrmode.IsVR() && t.linetarget)
 		{
 			A_StartSound(hitsound, CHAN_WEAPON);
 			angle = t.angleFromSource;

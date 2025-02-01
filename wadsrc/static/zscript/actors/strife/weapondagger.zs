@@ -65,8 +65,14 @@ class PunchDagger : StrifeWeapon
 		if (t.linetarget)
 		{
 			A_StartSound (t.linetarget.bNoBlood ? sound("misc/metalhit") : sound("misc/meathit"), CHAN_WEAPON);
-			angle = t.angleFromSource;
-			bJustAttacked = true;
+			
+			VRMode vrmode = VRMode.GetVRMode();
+			if(!vrmode.IsVR())
+			{
+				angle = t.angleFromSource;
+				//to move forward
+				bJustAttacked = true;
+			}
 			t.linetarget.DaggerAlert (self);
 		}
 		else
