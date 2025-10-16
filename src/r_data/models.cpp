@@ -45,6 +45,8 @@
 #include "modelrenderer.h"
 #include "actor.h"
 #include "actorinlines.h"
+#include "v_video.h"
+#include "hw_bonebuffer.h"
 
 
 #ifdef _MSC_VER
@@ -146,9 +148,9 @@ void RenderModel(FModelRenderer *renderer, float x, float y, float z, FSpriteMod
 
 	// [MK] distortions might happen depending on when the pixel stretch is compensated for
 	// so we make the "undistorted" behavior opt-in
-	if (smf_flags & MDL_CORRECTPIXELSTRETCH)
+	if ((smf_flags & MDL_CORRECTPIXELSTRETCH) && smf->modelIDs.Size() > 0)
 	{
-		stretch = (smf->modelIDs[0] != -1 ? Models[smf->modelIDs[0]]->getAspectFactor(actor->Level->info->pixelstretch) : 1.f) / actor->Level->info->pixelstretch;
+		stretch = (smf->modelIDs[0] >= 0 ? Models[smf->modelIDs[0]]->getAspectFactor(actor->Level->info->pixelstretch) : 1.f) / actor->Level->info->pixelstretch;
 		objectToWorldMatrix.scale(1, stretch, 1);
 	}
 
@@ -187,9 +189,9 @@ void RenderModel(FModelRenderer *renderer, float x, float y, float z, FSpriteMod
 	objectToWorldMatrix.rotate(smf->pitchoffset, 0, 0, 1);
 	objectToWorldMatrix.rotate(-smf->rolloffset, 1, 0, 0);
 
-	if (!(smf_flags & MDL_CORRECTPIXELSTRETCH))
+	if (!(smf_flags & MDL_CORRECTPIXELSTRETCH) && smf->modelIDs.Size() > 0)
 	{
-		stretch = (smf->modelIDs[0] != -1 ? Models[smf->modelIDs[0]]->getAspectFactor(actor->Level->info->pixelstretch) : 1.f) / actor->Level->info->pixelstretch;
+		stretch = (smf->modelIDs[0] >= 0 ? Models[smf->modelIDs[0]]->getAspectFactor(actor->Level->info->pixelstretch) : 1.f) / actor->Level->info->pixelstretch;
 		objectToWorldMatrix.scale(1, stretch, 1);
 	}
 
@@ -403,8 +405,7 @@ void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpr
 
 	TArray<FTextureID> surfaceskinids;
 
-	TArray<VSMatrix> boneData;
-	int boneStartingPosition = 0;
+	int boneStartingPosition = -1;
 	bool evaluatedSingle = false;
 
 	for (unsigned i = 0; i < modelsamount; i++)
@@ -529,18 +530,11 @@ void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpr
 
 			bool nextFrame = smfNext && modelframe != modelframenext;
 
-			if (actor->boneComponentData == nullptr)
-			{
-				auto ptr = Create<DBoneComponents>();
-				ptr->trscomponents.Resize(modelsamount);
-				ptr->trsmatrix.Resize(modelsamount);
-				actor->boneComponentData = ptr;
-				GC::WriteBarrier(actor, ptr);
-			}
 
 			// [RL0] while per-model animations aren't done, DECOUPLEDANIMATIONS does the same as MODELSAREATTACHMENTS
 			if(!evaluatedSingle)
 			{
+				const TArray<VSMatrix> *boneData = nullptr;
 				FModel* animation = mdl;
 				const TArray<TRS>* animationData = nullptr;
 
@@ -552,20 +546,24 @@ void RenderFrameModels(FModelRenderer *renderer, FLevelLocals *Level, const FSpr
 
 				if(is_decoupled)
 				{
-					if(decoupled_frame.frame1 != -1)
+					if(decoupled_frame.frame1 >= 0)
 					{
-						boneData = animation->CalculateBones(actor->modelData->prevAnim, decoupled_frame, inter, animationData, actor->boneComponentData, i);
+						boneData = animation->CalculateBones(actor->modelData->prevAnim, decoupled_frame, inter, animationData);
 					}
 				}
 				else
 				{
-					boneData = animation->CalculateBones(nullptr, {nextFrame ? inter : -1.0f, modelframe, modelframenext}, -1.0f, animationData, actor->boneComponentData, i);
+					boneData = animation->CalculateBones(nullptr, {nextFrame ? inter : -1.0f, modelframe, modelframenext}, -1.0f, animationData);
 				}
-				boneStartingPosition = renderer->SetupFrame(animation, 0, 0, 0, boneData, -1);
-				evaluatedSingle = (smf_flags & MDL_MODELSAREATTACHMENTS) || is_decoupled;
+
+				if(smf_flags & MDL_MODELSAREATTACHMENTS || is_decoupled)
+				{
+					boneStartingPosition = boneData ? screen->mBones->UploadBones(*boneData) : -1;
+					evaluatedSingle = true;
+				}
 			}
 
-			mdl->RenderFrame(renderer, tex, modelframe, nextFrame ? modelframenext : modelframe, nextFrame ? inter : -1.f, translation, ssidp, boneData, boneStartingPosition);
+			mdl->RenderFrame(renderer, tex, modelframe, nextFrame ? modelframenext : modelframe, nextFrame ? inter : -1.f, translation, ssidp, boneStartingPosition);
 		}
 	}
 }
@@ -996,10 +994,10 @@ void ParseModelDefLump(int Lump)
 					if (isframe)
 					{
 						sc.MustGetString();
-						if (smf.modelIDs[index] != -1)
+						if (smf.modelIDs[index] >= 0)
 						{
 							FModel *model = Models[smf.modelIDs[index]];
-							if (smf.animationIDs[index] != -1)
+							if (smf.animationIDs[index] >= 0)
 							{
 								model = Models[smf.animationIDs[index]];
 							}

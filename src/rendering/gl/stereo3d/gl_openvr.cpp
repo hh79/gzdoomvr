@@ -3,7 +3,7 @@
 //
 // Copyright(C) 2016-2017 Christopher Bruns
 // Copyright(C) 2020 Simon Brown
-// Copyright(C) 2020 Krzysztof Marecki
+// Copyright(C) 2020-2025 Krzysztof Marecki
 // All rights reserved.
 //
 // This program is free software: you can redistribute it and/or modify
@@ -23,7 +23,7 @@
 //
 /*
 ** gl_openvr.cpp
-** Stereoscopic virtual reality mode for the HTC Vive headset
+** Stereoscopic virtual reality mode
 **
 */
 
@@ -292,13 +292,12 @@ namespace s3d
 		virtual int FindFrame(const char* name, bool nodefault) override {
 			return 0;
 		}
-
-		virtual void RenderFrame(FModelRenderer* renderer, FGameTexture* skin, int frame, int frame2, double inter, FTranslationID translation, const FTextureID* surfaceskinids, const TArray<VSMatrix>& boneData, int boneStartPosition) override {
+		virtual void RenderFrame(FModelRenderer* renderer, FGameTexture* skin, int frame, int frame2, double inter, FTranslationID translation, const FTextureID* surfaceskinids, int boneStartPosition) override {
 			if (!isLoaded())
 				return;
 			FMaterial* tex = FMaterial::ValidateTexture(pFTex, false, false);
 			auto vbuf = GetVertexBuffer(renderer->GetType());
-			renderer->SetupFrame(this, 0, 0, 0, {}, -1);
+			renderer->SetupFrame(this, 0, 0, 0, -1);
 			renderer->SetMaterial(pFTex, CLAMP_NONE, translation);
 			renderer->DrawElements(pModel->unTriangleCount * 3, 0);
 		}
@@ -1033,7 +1032,7 @@ namespace s3d
 			{
 				state.EnableModelMatrix(true);
 
-				controllers[i].model->RenderFrame(&renderer, 0, 0, 0, 0, FTranslationID::fromInt(0), nullptr, {}, 0);
+				controllers[i].model->RenderFrame(&renderer, 0, 0, 0, 0, FTranslationID::fromInt(0), nullptr, 0);
 				state.SetVertexBuffer(screen->mVertexData);
 
 				state.EnableModelMatrix(false);
